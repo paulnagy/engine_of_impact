@@ -1,3 +1,5 @@
 api_miners/key_vault.py
 .vscode
 .venv
+.python_packages
+__pycache__
