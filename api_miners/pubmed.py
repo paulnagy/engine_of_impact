@@ -726,7 +726,7 @@ def main():
         finalTable = finalTable.reset_index()
         if ('index' in finalTable.columns):
             del finalTable['index']
-            del finalTable['level_0']
+            #del finalTable['level_0']
 
         #update the current records
         makeCSVJSON(finalTable, key_dict)

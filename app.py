@@ -1,11 +1,18 @@
 import dash
 import ast
 from dash import dcc, html, dash_table
-from api_miners import key_vault
+from api_miners import key_vault, youtube
 from api_miners.pubmed import *
-from views import pubs
+from views import pubs, education
 import plotly.express as px
 import pandas as pd 
+
+#youtube.main()
+#pubmed.main()
+# app=dash.Dash()
+#app.layout= pubs.build_pubs_dash()
+# app.layout= education.build_education_dash()
+
 
 from flask import Flask
 from functools import wraps
