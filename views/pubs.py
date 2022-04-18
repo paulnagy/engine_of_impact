@@ -27,16 +27,27 @@ def build_pubs_dash():
                     'fullAuthor':item['data']['fullAuthor'],
                     'title':item['data']['title'],
                     'journalTitle':item['data']['journalTitle'],
-                    'pubYear':item['data']['pubYear']})
-    df1=pd.DataFrame(data)     
+                    'pubYear':item['data']['pubYear'],
+                    'mesh':item['data']['meshT']})
+    df1=pd.DataFrame(data)   
+
+    #parse authors to set a limit on authors shown n_authors
     df1['authors']=""
+    n_authors=10
     for i,row in df1.iterrows():
         authors=ast.literal_eval(row['fullAuthor'])
-        if len(authors)>2:
-            auth_list="{}, + {} co-authors,  {}".format(authors[0].replace(',',''),len(authors)-2,authors[-1].replace(',',''))
-        elif len(authors)>0:
-            auth_list=authors[0].replace(',','')
+        auth_list=""
+        if len(authors)>n_authors:
+            for j in range(n_authors):
+                auth_list+="{}, ".format(authors[j].replace(',',''))
+            auth_list += "+ {} authors, ".format(len(authors)-n_authors)
+            auth_list += "{} ".format(authors[-1].replace(',',''))
+        else:
+            for auth in authors:
+                auth_list+="{}, ".format(auth.replace(',',''))
+            auth_list=auth_list[:-2]
         df1.loc[i,'authors']=auth_list
+
     df1['pubDate']=df1.creationDate.str[:-6]
     df2=df1.groupby('pubYear').pubmedID.count().reset_index()
     df2.columns=['Year','Count']
