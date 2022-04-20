@@ -4,7 +4,7 @@
 
 azure-functions
 azure-cosmos
-apiclient
+google-api-python-client
 oauth2client
 pandas
 biopython >= 1.22.3
