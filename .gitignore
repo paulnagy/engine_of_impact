@@ -1,3 +1,5 @@
+.gitignore
+.funcignore
 api_miners/key_vault.py
 .vscode
 .venv
