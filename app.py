@@ -53,9 +53,8 @@ secret_api_key = key_dict['SERPAPI_KEY']
 
 client = CosmosClient(endpoint, azure_key)
 database_name = 'ohdsi-impact-engine'
-key_dict = kv.get_key_dict()
-container = init_cosmos(key_dict, 'pubmed')
-container_ignore = init_cosmos(key_dict, 'pubmed_ignore')
+container = pubmed.init_cosmos(key_dict, 'pubmed')
+container_ignore = pubmed.init_cosmos(key_dict, 'pubmed_ignore')
 
 
 dashApp=dash.Dash(__name__,
