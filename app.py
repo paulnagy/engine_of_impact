@@ -1,8 +1,6 @@
 import dash
-import ast
 from dash import dcc, html, dash_table
-from api_miners import key_vault, youtube
-from api_miners.pubmed import *
+from api_miners import key_vault, youtube, pubmed
 from views import pubs, education
 import plotly.express as px
 import pandas as pd 
@@ -25,7 +23,6 @@ from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutoria
 import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
 import time
 import datetime as date   
-import pandas as pd
 import numpy as np
 import json
 import re
@@ -37,13 +34,11 @@ from os.path import exists
 from pprint import pprint
 from collections import defaultdict, Counter
 from dateutil.parser import *
-import ast
 from email.headerregistry import ContentTypeHeader
 import mimetypes
 from httplib2 import Response
 #
 import logging
-from ast import Str
 from pickle import GET, TRUE
 from re import L
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
@@ -67,8 +62,6 @@ dashApp=dash.Dash(__name__,
     server=app,
     url_base_pathname='/dashboard/')
 dashApp.layout= pubs.build_pubs_dash()
-
-
 
 @app.route('/')
 def home():
