@@ -5,3 +5,4 @@ api_miners/key_vault.py
 .venv
 .python_packages
 __pycache__
+aadconfig.json

@@ -4,7 +4,7 @@ from api_miners import key_vault, youtube, pubmed
 from views import pubs, education
 import plotly.express as px
 import pandas as pd 
-
+from api_miners.pubmed import *
 #youtube.main()
 #pubmed.main()
 # app=dash.Dash()
@@ -45,6 +45,12 @@ from flask import Flask, current_app, flash, jsonify, make_response, redirect, r
 import os
 from io import StringIO
 
+from ms_identity_web import IdentityWebPython
+from ms_identity_web.adapters import FlaskContextAdapter
+from ms_identity_web.configuration import AADConfig
+# credential = DefaultAzureCredential()()
+# subscription_client = SubscriptionClient(credential)
+
 app = Flask(__name__)
 key_dict = key_vault.get_key_dict()
 endpoint = key_dict['AZURE_ENDPOINT']
@@ -62,15 +68,32 @@ dashApp=dash.Dash(__name__,
     url_base_pathname='/dashboard/')
 dashApp.layout= pubs.build_pubs_dash()
 
+aad_configuration = AADConfig.parse_json('aadconfig.json')
+adapter = FlaskContextAdapter(app)
+ms_identity_web = IdentityWebPython(aad_configuration, adapter)
+
+# @app.route('/')
+# def home():
+#     return render_template('login.html')
+#     # return 'Welcome to Engine-of-Impact: OHDSI Article Manager '
+
 @app.route('/')
-def home():
-    return render_template('login.html')
-    # return 'Welcome to Engine-of-Impact: OHDSI Article Manager '
+@app.route('/sign_in_status')
+def index():
+    return render_template('auth/status.html')
+
+
+@app.route('/token_details')
+@ms_identity_web.login_required # <-- developer only needs to hook up login-required endpoint like this
+def token_details():
+    current_app.logger.info("token_details: user is authenticated, will display token details")
+    return render_template('auth/token.html')
 
 
 @app.route('/not_found')
 def not_found():
     return jsonify(message = 'That resource was not found'), 404
+    
 
 @app.route('/login', methods = ['POST'])
 def login():
