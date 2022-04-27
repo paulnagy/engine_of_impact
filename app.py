@@ -42,8 +42,12 @@ ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
 
 #Dash Apps
-dashApp=dash.Dash(__name__, server=app, url_base_pathname='/publication_dashboard/')
-dashApp.layout= pubs.build_pubs_dash()
+pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/publication_dashboard/')
+pubmedDashApp.layout= pubs.build_pubs_dash()
+
+youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/')
+youtubeDashApp.layout= education.build_education_dash()
+
 
 #Routes
 # @app.route('/')
@@ -60,7 +64,12 @@ def index():
 
 @app.route('/publication_dashboard', methods = ['POST', 'GET'])
 def dashboard():
-    return dashApp.index()
+    return pubmedDashApp.index()
+
+
+@app.route('/education_dashboard', methods = ['POST', 'GET'])
+def education():
+    return youtubeDashApp.index()
 
 
 @app.route('/token_details')
