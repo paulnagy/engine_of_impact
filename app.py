@@ -1,9 +1,38 @@
 import dash
 from dash import dcc, html, dash_table
 from api_miners import key_vault, youtube, pubmed
-from views import pubs, education
 import plotly.express as px
 import pandas as pd 
+from api_miners.pubmed import *
+from flask import Flask
+from functools import wraps
+from azure.cosmos import CosmosClient, PartitionKey
+from googleapiclient.discovery import build
+import datetime as date   
+from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
+from ms_identity_web import IdentityWebPython
+from ms_identity_web.adapters import FlaskContextAdapter
+from ms_identity_web.configuration import AADConfig
+#dashapp layouts
+from views import pubs, education
+
+#App Configurations
+app = Flask(__name__)
+key_dict = key_vault.get_key_dict()
+endpoint = key_dict['AZURE_ENDPOINT']
+azure_key = key_dict['AZURE_KEY']
+secret_api_key = key_dict['SERPAPI_KEY']
+
+#CosmosDB Connection
+client = CosmosClient(endpoint, azure_key)
+database_name = 'ohdsi-impact-engine'
+container = pubmed.init_cosmos(key_dict, 'pubmed')
+container_ignore = pubmed.init_cosmos(key_dict, 'pubmed_ignore')
+
+#Azure Authentication Configurations
+aad_configuration = AADConfig.parse_json('aadconfig.json')
+adapter = FlaskContextAdapter(app)
+ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
 #youtube.main()
 #pubmed.main()
@@ -12,65 +41,48 @@ import pandas as pd
 # app.layout= education.build_education_dash()
 
 
-from flask import Flask
-from functools import wraps
-from azure.cosmos import CosmosClient,PartitionKey
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from oauth2client.tools import argparser
+#Dash Apps
+pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/publication_dashboard/')
+pubmedDashApp.layout= pubs.build_pubs_dash()
 
-from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec%3Aentrez-specialized-parsers
-import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
-import time
-import datetime as date   
-import numpy as np
-import json
-import re
-from serpapi import GoogleSearch
-import csv
-import Levenshtein as lev
-from fuzzywuzzy import fuzz, process
-from os.path import exists
-from pprint import pprint
-from collections import defaultdict, Counter
-from dateutil.parser import *
-from email.headerregistry import ContentTypeHeader
-import mimetypes
-from httplib2 import Response
-#
-import logging
-from pickle import GET, TRUE
-from re import L
-from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
-import os
-from io import StringIO
-
-app = Flask(__name__)
-key_dict = key_vault.get_key_dict()
-endpoint = key_dict['AZURE_ENDPOINT']
-azure_key = key_dict['AZURE_KEY']
-secret_api_key = key_dict['SERPAPI_KEY']
-
-client = CosmosClient(endpoint, azure_key)
-database_name = 'ohdsi-impact-engine'
-container = pubmed.init_cosmos(key_dict, 'pubmed')
-container_ignore = pubmed.init_cosmos(key_dict, 'pubmed_ignore')
+youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/')
+youtubeDashApp.layout= education.build_education_dash()
 
 
-dashApp=dash.Dash(__name__,
-    server=app,
-    url_base_pathname='/dashboard/')
-dashApp.layout= pubs.build_pubs_dash()
+#Routes
+# @app.route('/')
+# def home():
+#     return render_template('login.html')
+#     # return 'Welcome to Engine-of-Impact: OHDSI Article Manager '
+
 
 @app.route('/')
-def home():
-    return render_template('login.html')
-    # return 'Welcome to Engine-of-Impact: OHDSI Article Manager '
+@app.route('/sign_in_status')
+def index():
+    return render_template('auth/status.html')
+
+
+@app.route('/publication_dashboard', methods = ['POST', 'GET'])
+def dashboard():
+    return pubmedDashApp.index()
+
+
+@app.route('/education_dashboard', methods = ['POST', 'GET'])
+def education():
+    return youtubeDashApp.index()
+
+
+@app.route('/token_details')
+@ms_identity_web.login_required # <-- developer only needs to hook up login-required endpoint like this
+def token_details():
+    current_app.logger.info("token_details: user is authenticated, will display token details")
+    return render_template('auth/token.html')
 
 
 @app.route('/not_found')
 def not_found():
     return jsonify(message = 'That resource was not found'), 404
+    
 
 @app.route('/login', methods = ['POST'])
 def login():
@@ -81,17 +93,12 @@ def login():
         test = True
     else: 
         test = False
-    # test = User.query.filter_by(email=email, password = password).first()
-
     if test:
-
         return jsonify(message = "True")
-        
-        
     else:
         return jsonify(message = 'Login unsuccessful. Bad email or password'), 401
 
-@app.route('/articleManager', methods = ['POST', 'GET'])# @jwt_required()
+@app.route('/articleManager', methods = ['POST', 'GET'])
 def articleManager():
     count = 0
     countIgnore = 0
@@ -206,11 +213,6 @@ def moveToContainer():
             return jsonify("Article moved to the pubmed article container.")
         else:
             return jsonify("Article is not in the database. Add it first.")
-
-@app.route('/dashboard', methods = ['POST', 'GET'])
-def dashboard():
-    return dashApp.index()
-
 
 
 if __name__ == '__main__':
