@@ -14,3 +14,4 @@ levenshtein >= 0.18.1
 fuzzywuzzy >= 0.18.0
 plotly >= 5.6.0
 dash >= 2.3.1
+git+https://github.com/azure-samples/ms-identity-python-sames-common
