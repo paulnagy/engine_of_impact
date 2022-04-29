@@ -49,12 +49,6 @@ youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_d
 youtubeDashApp.layout= education.build_education_dash()
 
 
-#Routes
-# @app.route('/')
-# def home():
-#     return render_template('login.html')
-#     # return 'Welcome to Engine-of-Impact: OHDSI Article Manager '
-
 
 @app.route('/')
 @app.route('/sign_in_status')
