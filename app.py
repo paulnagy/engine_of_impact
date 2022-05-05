@@ -1,27 +1,34 @@
-import dash
-from dash import dcc, html, dash_table
 from api_miners import key_vault, youtube, pubmed
-import plotly.express as px
-import pandas as pd 
 from api_miners.pubmed import *
-from flask import Flask
-from functools import wraps
 from azure.cosmos import CosmosClient, PartitionKey
-from googleapiclient.discovery import build
+import dash
+from dash import Dash, dcc, html, Input, Output, State
 import datetime as date   
+from googleapiclient.discovery import build
+from flask import Flask
+from flask_session import Session
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
+from functools import wraps
+import logging
 from ms_identity_web import IdentityWebPython
 from ms_identity_web.adapters import FlaskContextAdapter
 from ms_identity_web.configuration import AADConfig
+import plotly.express as px
+import pandas as pd 
 #dashapp layouts
 from views import pubs, education
 
 #App Configurations
 app = Flask(__name__)
+Session(app) # init the serverside session for the app: this is requireddue to large cookie size
+aad_configuration = AADConfig.parse_json('aadconfig.json')
+SESSION_TYPE = "filesystem"
+SESSION_STATE = None
 key_dict = key_vault.get_key_dict()
 endpoint = key_dict['AZURE_ENDPOINT']
 azure_key = key_dict['AZURE_KEY']
 secret_api_key = key_dict['SERPAPI_KEY']
+
 
 #CosmosDB Connection
 client = CosmosClient(endpoint, azure_key)
@@ -30,7 +37,16 @@ container = pubmed.init_cosmos(key_dict, 'pubmed')
 container_ignore = pubmed.init_cosmos(key_dict, 'pubmed_ignore')
 
 #Azure Authentication Configurations
-aad_configuration = AADConfig.parse_json('aadconfig.json')
+secure_client_credential=None
+app.logger.level=logging.INFO # can set to DEBUG for verbose logs
+if app.config.get('ENV') == 'production':
+    # The following is required to run on Azure App Service or any other host with reverse proxy:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+    # Use client credential from outside the config file, if available.
+    if secure_client_credential: aad_configuration.client.client_credential = secure_client_credential
+
+AADConfig.sanity_check_configs(aad_configuration)
 adapter = FlaskContextAdapter(app)
 ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
@@ -42,11 +58,11 @@ ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
 
 #Dash Apps
-pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/publication_dashboard/')
-pubmedDashApp.layout= pubs.build_pubs_dash()
+pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/pub_dashboard/')
+pubmedDashApp.layout= pubs.build_pubs_dash
 
 youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/')
-youtubeDashApp.layout= education.build_education_dash()
+youtubeDashApp.layout= education.build_education_dash
 
 
 
@@ -56,9 +72,57 @@ def index():
     return render_template('auth/status.html')
 
 
-@app.route('/publication_dashboard', methods = ['POST', 'GET'])
+@app.route('/publication_dashboard/', methods = ['POST', 'GET'])
 def dashboard():
+    # dashHtml = BeautifulSoup(pubmedDashApp.index(), 'html.parser')
+    return render_template("publication_dashboard.html")
+    # return jsonify({'htmlresponse': render_template('publication_dashboard.html', dashHtml = pubmedDashApp)})
+
+
+
+@app.route('/pub_dashboard', methods = ['POST', 'GET'])
+def dash_app_pub():
     return pubmedDashApp.index()
+
+
+@pubmedDashApp.callback(
+    Output('container-button-basic', 'children'),
+    Input('input-on-submit', 'value')
+)
+def update_output(value):
+    if(value != ""):
+        searchArticles = value
+        designatedContainer = "pubmed"
+        numNewArticles = 0
+        containerArticles = getExistingIDandSearchStr(key_dict, designatedContainer)
+        secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
+        articleTable = getPMArticles(searchArticles)
+        articleTable = articleTable[articleTable['pubYear'] > 2010]
+        specifiedArticle = articleTable['pubmedID'][0]
+        articleTable = articleTable[articleTable.pubmedID.notnull()]
+        articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
+
+        if(numNewArticles == 0):
+            if(specifiedArticle in containerArticles[0]):
+                return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
+            else:
+                return jsonify("This article already exists in the other container. Please verify." )
+        else:
+            
+            articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
+            articleTable = articleTable.reset_index()
+            if ('index' in articleTable.columns):
+                del articleTable['index']
+
+            #update the current records
+            # makeCSVJSON(finalTable, key_dict)
+            #update the current records
+            makeCSVJSON(articleTable, key_dict, designatedContainer, False)
+            
+        value = ""
+        return '{} new article(s) added successfully'.format(numNewArticles)
+        # return pubmedDashApp.index()
+        # return dashboard()
 
 
 @app.route('/education_dashboard', methods = ['POST', 'GET'])
@@ -141,6 +205,7 @@ def insert():
         numNewArticles = 0
         containerArticles = getExistingIDandSearchStr(key_dict, designatedContainer)
 
+        secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
         articleTable = getPMArticles(searchArticles)
         articleTable = articleTable[articleTable['pubYear'] > 2010]
         specifiedArticle = articleTable['pubmedID'][0]
@@ -154,13 +219,16 @@ def insert():
                 return jsonify("This article already exists in the other container. Please verify." )
         else:
             
-            articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar']] = articleTable.apply(lambda x: getGoogleScholarCitation(x), axis = 1, result_type='expand')
-            articleTable = trackCitationChanges(articleTable, key_dict)
-            if ('Unnamed: 0' in articleTable.columns):
-                del articleTable['Unnamed: 0']
-                del articleTable['Unnamed: 0.1']
+            articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
+            articleTable = articleTable.reset_index()
+            if ('index' in articleTable.columns):
+                del articleTable['index']
+
+            #update the current records
+            # makeCSVJSON(finalTable, key_dict)
             #update the current records
             makeCSVJSON(articleTable, key_dict, designatedContainer, False)
+
 
             return jsonify("" + str(numNewArticles) + " new article(s) added successfully")
 
@@ -182,7 +250,6 @@ def remove_article():
                 return jsonify('Article does not exist in this container.')
         else:
             if(searchArticles in containerArticles[0]):
-                print("in pubmed container")
                 for item in container.query_items( 'SELECT * FROM pubmed', enable_cross_partition_query=True):
                     if(item['id'] == ("PMID: " + str(searchArticles))):
                         container.delete_item(item=item, partition_key=item['id'])

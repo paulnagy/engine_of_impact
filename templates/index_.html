@@ -1,64 +1,21 @@
 
 
-<html>
+{% extends 'layout.html' %}
+
+        
+{% block body %}
     
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>OHDSI Article Manager</title>
         
-        
-        
-        
-    </head>
-
-        
-
-    <body>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+            <div class = "row">
+                <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
         <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
         
         <script src="http://rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.js"></script>
         
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
-        <div class="container">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <a class="navbar-brand" href="#">Engine of Impact: OHDSI</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-                </button>
-            
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item active">
-                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Dashboards
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="/publication_dashboard">OHDSI Publication Tracker</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="/education_dashboard">OHDSI Education Content Tracker</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link disabled" href="#">Disabled</a>
-                    </li>
-                </ul>
-                <div class="btn-group ml-auto dropleft">
-                    {% include "auth/auth-bar-items.html" %}
-                </div>
-                </div>
-            </nav>
-            <div class = "row">
-                <div class="column1" style="margin: 0%;">
+        
+                <div class="column1">
 
                     <br />
                     
@@ -114,14 +71,14 @@
                 </div>
                 <div class = "column2">
                     <div class="container search-table">
-                        <p><h2 align="center" style="width: 700px;">Live Data Search</h2></p>
-                                <div class="search-box" style="width: 700px;">
-                                    <div class="row" style="width: 700px;">
-                                        <div class="col-md-3"style="width: 700px;" >
+                        <p><h2 align="center" >Live Data Search</h2></p>
+                                <div class="search-box" style="width: 1000px;">
+                                    <div class="row" style="width: 1000px;">
+                                        <div class="col-md-3"style="width: 1000px;" >
                                             <h5>Search Article by Name or PubMed ID</h5>
                                         </div>
                                         <div class="col-md-9">
-                                            <input type="text" name="search_text" id="search_text" class="form-control" placeholder="Search fields e.g. title, id, or author" style="width: 300px;">
+                                            <input type="text" name="search_text" id="search_text" class="form-control" placeholder="Search fields e.g. title, id, or author" style="width: 600px;">
                                         </div> 
                                     </div>
                                 </div>
@@ -275,8 +232,7 @@
             
             .column1{
                 width: auto;
-                padding-right: 100px;
-                margin-left: 0px;
+                margin-left: 100px;
                 margin-right: 0px;
                 margin-top: 0px;
                 margin-bottom: 0px;
@@ -319,5 +275,5 @@
             }
         </style>
 
-    </body>
-</html>
+
+{% endblock %}

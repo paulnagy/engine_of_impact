@@ -9,7 +9,7 @@ oauth2client
 pandas
 biopython >= 1.22.3
 xmltodict >= 0.12.0
-google-search-results
+google-search-results 
 levenshtein >= 0.18.1
 fuzzywuzzy >= 0.18.0
 plotly >= 5.6.0

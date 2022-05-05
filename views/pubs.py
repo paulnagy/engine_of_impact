@@ -84,26 +84,39 @@ def build_pubs_dash():
     fig.update_layout( title_text="Publications Analysis", showlegend=False)
     df1['publication']=df1.apply(lambda row:"[{}](http://pubmed.gov/{})".format(row.title,row.pubmedID),axis=1)
     cols=['pubDate','authors','publication','journalTitle','citations']
-    layout=html.Div(
-        children=[
-                dcc.Graph(id='publications',figure=fig), 
-                html.Div(),
-                dash_table.DataTable(df1.sort_values('pubDate',ascending=False).to_dict('records'), 
-                        [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
-                        style_cell={
-                            'height': 'auto',
-                            # all three widths are needed
-                            'minWidth': '10px', 'width': '10px', 'maxWidth': '250px',
-                            'whiteSpace': 'normal',
-                            'textAlign': 'left'
-                        },
-                        sort_action='native',
-                        page_current=0,
-                        page_size=20,
-                        page_action='native',
-                        filter_action='native'
+    layout= html.Div([
+                dcc.Interval(
+                    id='interval-component',
+                    interval=1*1000 # in milliseconds
+                ),
+                html.Div(
+                    children=[
+                            html.Div(dcc.Input(id='input-on-submit', type='text', value = "")),
+                            html.Button('Add Article', id='submit-val'),
+                            html.Div(id='container-button-basic',
+                                    children='Enter article PubMed ID or name'),
+                            
+                            dcc.Graph(id='publications',figure=fig), 
+                            html.Div(id='my-output'),
+                            dash_table.DataTable(df1.sort_values('pubDate',ascending=False).to_dict('records'), 
+                                    [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
+                                    style_cell={
+                                        'height': 'auto',
+                                        # all three widths are needed
+                                        'minWidth': '10px', 'width': '10px', 'maxWidth': '250px',
+                                        'whiteSpace': 'normal',
+                                        'textAlign': 'left'
+                                    },
+                                    sort_action='native',
+                                    page_current=0,
+                                    page_size=20,
+                                    page_action='native',
+                                    filter_action='native'
 
-                     )
-        ]
-    )
+                                )
+                            
+                    ]
+                )
+            ])
     return layout
+

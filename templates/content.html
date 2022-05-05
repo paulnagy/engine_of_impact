@@ -7,17 +7,7 @@
 {% endblock %}
 
 {% block body %}
-<div class="card">
-    <h5 class="card-header">
-        {% block header%} {% endblock %}
-    </h5>
-    <div class="card-body">
-        <p class="card-text">
-            {% block text %} {% endblock %}
-        </p>
-    </div>
 
-</div>
 {% endblock %}
 
 {% block flash_messages %}
@@ -39,7 +29,6 @@
                 <br>
                 <strong>redirect_uri</strong>: {{ ms_id_url_for('aad_redirect', _external=True) }}
             </div>
-            <iframe src="http://localhost:5000/publication_dashboard" width=1200 height=800></iframe>
         </div>
     {% endif %}
 
