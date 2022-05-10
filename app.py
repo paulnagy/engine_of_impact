@@ -69,7 +69,8 @@ youtubeDashApp.layout= education.build_education_dash
 @app.route('/')
 @app.route('/sign_in_status')
 def index():
-    return render_template('auth/status.html')
+    return render_template('mainContent.html')
+    # return render_template('auth/status.html')
 
 
 @app.route('/publication_dashboard/', methods = ['POST', 'GET'])
