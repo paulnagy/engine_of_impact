@@ -48,7 +48,7 @@ def build_pubs_dash():
             auth_list=auth_list[:-2]
         df1.loc[i,'Authors']=auth_list
 
-    df1['Publication Date']=df1['Creation Date'].str[:-6]
+    df1['Creation Date']=df1['Creation Date'].str[:-6]
     df2=df1.groupby('Publication Year')['PubMed ID'].count().reset_index()
     df2.columns=['Year','Count']
     bar_fig=px.bar(
@@ -68,37 +68,51 @@ def build_pubs_dash():
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
     fig = make_subplots(rows=1, cols=2,
-                        subplot_titles=("Publications","Cumulative Citations"))
+                        subplot_titles=("<b> Publications </b>","<b> Cumulative Citations </b>"))
     fig.add_trace(
         go.Bar(
         x=df2['Year'],
-        y=df2['Count']),
+        y=df2['Count'],
+        marker=dict(color = '#20425A')),
         row=1, col=1
         )
     fig.add_trace(
         go.Line(
         x=df3['Year'],
-        y=df3['Count']),
+        y=df3['Count'],
+        marker=dict(color = '#20425A')),
         row=1, col=2
         )
-    fig.update_layout( title_text="Publications Analysis", showlegend=False)
+    fig.update_layout(showlegend=False, font_family="Saira Extra Condensed")
     df1['Publication']=df1.apply(lambda row:"[{}](http://pubmed.gov/{})".format(row.Title,row['PubMed ID']),axis=1)
-    cols=['Publication Date','Authors','Publication','Journal','Citation Count']
+    cols=['Creation Date','Authors','Publication','Journal','Citation Count']
     layout= html.Div([
                 dcc.Interval(
                     id='interval-component',
                     interval=1*1000 # in milliseconds
                 ),
                 html.Div(
+                    
                     children=[
-                            html.Div(dcc.Input(id='input-on-submit', type='text', value = "")),
-                            html.Button('Add Article', id='submit-val'),
-                            html.Div(id='container-button-basic',
-                                    children='Enter article PubMed ID or name'),
-                            
+                            # html.Div(dcc.Input(id='input-on-submit', type='text', value = "")),
+                            # html.Button('Add Article', id='submit-val'),
+                            # html.Div(id='container-button-basic',
+                            #         children='Enter article PubMed ID or name'),
+                            html.Br(),
+                            html.Br(),
+                            html.Br(),
+                            html.H1("Publication Analysis", 
+                                style={
+                                    'font-family': 'Saira Extra Condensed',
+                                    'color': '#20425A',
+                                    'fontWeight': 'bold',
+                                    'text-align': 'center'
+
+                                }
+                            ),
                             dcc.Graph(id='publications',figure=fig), 
                             html.Div(id='my-output'),
-                            dash_table.DataTable(df1.sort_values('Publication Date',ascending=False).to_dict('records'), 
+                            dash_table.DataTable(df1.sort_values('Creation Date',ascending=False).to_dict('records'), 
                                     [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
                                     style_cell={
                                         'height': 'auto',
@@ -120,18 +134,19 @@ def build_pubs_dash():
                                     style_filter=[
                                         {
                                             'color': 'black',
-                                            'backgroundColor': 'white',
+                                            'backgroundColor': '#20425A',
                                             'font-family': 'Saira Extra Condensed'
                                         }
                                     ],
                                     style_header={
                                         'font-family': 'Saira Extra Condensed',
-                                        'color': 'black',
+                                        'background-color': '#20425A',
+                                        'color': 'white',
                                         'fontWeight': 'bold'
                                     }
                                 )
                             
-                    ]
+                    ], style={'padding-top': '0px', 'overflow-y': 'hidden'}
                 )
             ])
     return layout

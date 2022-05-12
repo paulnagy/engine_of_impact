@@ -6,8 +6,40 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>OHDSI Article Manager</title>
         
-        
-        
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename = 'favicon.ico') }}">
+        <style>
+            .main {
+              margin-left: 320px; /* Same as the width of the sidenav */
+            }
+            .footer {
+              margin-left: 320px; /* Same as the width of the sidenav */
+            }
+            .sidenav {
+              height: 100%;
+              width: 320px;
+              position: fixed;
+              z-index: 1;
+              top: 0;
+              left: 0;
+              background-color: #20425A;
+              overflow-x: hidden;
+              padding-top: 15%;
+            }
+      
+            .sidenav a {
+              padding: 6px 6px 6px 32px;
+              text-decoration: none;
+              font-size: 25px;
+              font-family: 'Saira Extra Condensed';
+              color: #fff;
+              display: block;
+            }
+      
+            .sidenav a:hover {
+              color: #f1f1f1;
+            }
+          </style>
         
     </head>
 
@@ -15,141 +47,104 @@
 
     <body>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-        
-        <script src="http://rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.js"></script>
-        
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
-        <div class="container">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <a class="navbar-brand" href="#">Engine of Impact: OHDSI</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-                </button>
-            
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item active">
-                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+        <div class="container-fluid">
+            <div class="sidenav" style="text-align: center;">
+                <a class="navbar-brand js-scroll-trigger" href="/">
+                <span class="d-none d-lg-block">
+                    <img class="img-fluid mx-auto mb-2" src="https://www.ohdsi.org/wp-content/uploads/2015/02/h243-ohdsi-logo-with-text.png" alt="">
+                </span>
+                </a>
+                
+                <ul class="navbar-nav" style="font-family: 'Saira Extra Condensed';">
+                    <li class="nav-item">
+                    <h4>
+                        <cdm-source-name class="text-white">OHDSI Engine of Impact</cdm-source-name>
+                    </h4>
                     </li>
                     <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Dashboards
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="/publication_dashboard">OHDSI Publication Tracker</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="/education_dashboard">OHDSI Education Content Tracker</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">Something else here</a>
-                    </div>
+                    <a class="nav-link js-scroll-trigger" href="#overview">Overview</a>
                     </li>
                     <li class="nav-item">
-                    <a class="nav-link disabled" href="#">Disabled</a>
+                    <a class="nav-link js-scroll-trigger" href="#metadata">Metadata</a>
+                    </li>
+                    <li class="nav-item">
+                    <a class="nav-link js-scroll-trigger active" href="#results">Results</a>
+                    </li>
+                    <li class="nav-item">
+                    <a class="nav-link js-scroll-trigger" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                    <a class="nav-link js-scroll-trigger" href="/auth/sign_in">Sign In</a>
                     </li>
                 </ul>
-                <div class="btn-group ml-auto dropleft">
-                    {% include "auth/auth-bar-items.html" %}
-                </div>
-                </div>
-            </nav>
-            <div class = "row">
-                <div class="column1" style="margin: 0%;">
-
-                    <br />
-                    
-                        <h2 align="left">PubMed Articles</h2><br />
-    
-                        <form method="post" id="sample_form">
-                        <div class="form-group">
-                            <label>Enter PubMed ID/Article Title</label>
-                            <input type="text" name="articleIdentifier" id="articleIdentifier" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Select Container</label>
-                            <select name="containerChoice" id="containerChoice" class="form-control">
-                                <option value="pubmed">PubMed</option>
-                                <option value="pubmed_ignore">PubMed Ignore</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <input type="submit" name="Add Article" id="addArticle" class="btn btn-success" value="Add Article" />
-                        </div>
-                        </form>
-                    
-                        <h2 align="left">Remove Article</h2><br />
-                        <form method="delete" id="delete_form">
-                            <div class="form-group">
-                                <label>Enter PubMed ID/Article Title</label>
-                                <input type="text" name="articleIDToRemove" id="articleIDToRemove" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label>Select Container</label>
-                                <select name="containerWithArticle" id="containerWithArticle" class="form-control">
-                                    <option value="pubmed">PubMed</option>
-                                    <option value="pubmed_ignore">PubMed Ignore</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <input type="submit" name="Remove Article" id="removeArticle" class="btn btn-success" value="Remove Article" />
-                            </div>
-                        </form>
-                    
-                    
-                        <h2 align="left">Move Article</h2><br />
-                        <form method="post" id="move_form">
-                            <div class="form-group">
-                                <label>Enter PubMed ID/Article Title</label>
-                                <input type="text" name="articleMove" id="articleMove" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <input type="submit" name="Move Article" id="moveArticle" class="btn btn-success" value="Move Article" />
-                            </div>
-                        </form>
-                    
-                </div>
-                <div class = "column2">
-                    <div class="container search-table">
-                        <p><h2 align="center" style="width: 700px;">Live Data Search</h2></p>
-                                <div class="search-box" style="width: 700px;">
-                                    <div class="row" style="width: 700px;">
-                                        <div class="col-md-3"style="width: 700px;" >
-                                            <h5>Search Article by Name or PubMed ID</h5>
-                                        </div>
-                                        <div class="col-md-9">
-                                            <input type="text" name="search_text" id="search_text" class="form-control" placeholder="Search fields e.g. title, id, or author" style="width: 300px;">
-                                        </div> 
-                                    </div>
-                                </div>
-                        <div class="scroll" id="result"></div>
-                    </div>
-
-                </div>
+                
             </div>
         </div>
+        <div class="main" style="padding-left: 50px; padding-right: 50px; font-family: 'Saira Extra Condensed'; color: #20425A;">
+            <br />
+            <br />
+            <h2 >Add New Article(s)</h2>
+            <form method="post" id="insert_form">
+            <div class="form-group">
+                <!-- <label>Enter PubMed ID/Article Title</label> -->
+                <input type="text" name="articleIdentifier" id="articleIdentifier" class="form-control" placeholder="Enter PubMed ID/Article Title">
+            </div>
+            <div class="row">
+                <div class="form-group" style="width: 200px; padding-left: 15px;">
+                    <label>Select Container</label>
+                    <select name="containerChoice" id="containerChoice" class="form-control">
+                        <option value="pubmed">PubMed</option>
+                        <option value="pubmed_ignore">PubMed Ignore</option>
+                    </select>
+                </div>
+                <div id = "insertResult" class = "column" style="padding-top: 40px; padding-left: 10px;"></div>
+            </div>
+            <div class="form-group">
+                <input type="submit" name="Add Article" id="addArticle" class="btn btn-success" value="Add Article" />
+            </div>
+            </form>
+            <br />
+            <h2 >Remove Article</h2>
+            <form method="delete" id="delete_form">
+                <div class="form-group">
+                    <!-- <label>Enter PubMed ID/Article Title</label> -->
+                    <input type="text" name="articleIDToRemove" id="articleIDToRemove" class="form-control" placeholder="Enter PubMed ID/Article Title">
+                </div>
+                <div class="row">
+                    <div class="form-group" style="width: 200px; padding-left: 15px;">
+                        <label>Select Container</label>
+                        <select name="containerWithArticle" id="containerWithArticle" class="form-control">
+                            <option value="pubmed">PubMed</option>
+                            <option value="pubmed_ignore">PubMed Ignore</option>
+                        </select>
+                    </div>
+                    <div id = "removalResult" class = "column" style="padding-top: 40px; padding-left: 10px;"></div>
+                </div>
 
+                <div class="form-group">
+                    <input type="submit" name="Remove Article" id="removeArticle" class="btn btn-success" value="Remove Article">
+                    
+                </div>
+            </form>
+            
+            <br />
+            <h2 >Move to the Ignore Container (maintain tracking until manuscript is verified</h2>
+            <form method="post" id="move_form">
+                <div class="form-group">
+                    <input type="text" name="articleMove" id="articleMove" class="form-control" placeholder="Enter PubMed ID/Article Title">
+                </div>
+                <div class="row">
+                    <div class="form-group" style="width: 200px; padding-left: 15px;">
+                        <input type="submit" name="Move Article" id="moveArticle" class="btn btn-success" value="Move Article" />
+                    </div>
+                    <div id = "moveResult" class = "column" style="padding-top: 10px; padding-left: 0px;"></div>
+                </div>
+                
+            </form>
+        </div>
         <script>
-
-
             $(document).ready(function () {
-                load_data();
-                function load_data(query = '')
-                {
-                    $.ajax({
-                        url:"/fetchrecords",
-                        method:"POST",
-                        data:{query:query},
-                        success:function(data)
-                            {
-                                $('#result').html(data);
-                                $("#result").append(data.htmlresponse);
-                            }
-                    });
-                }
+                
                 $('#search_text').keyup(function(){
                     var search = $(this).val();
                     if(search != ''){
@@ -164,10 +159,13 @@
                     load_data(query);
                 });
 
-            $('#sample_form').on('submit', function(event){
+            $('#insert_form').on('submit', function(event){
                 event.preventDefault();
                 if($('#articleIdentifier').val() == '') {
-                    alert("Enter Article PubmedID or title");
+                    $('#insertResult').html("Please Enter Article PubMed ID/Title");
+                    setTimeout(() => {
+                        $('#insertResult').html("");
+                    }, 2000);
                     return false;
                 }else if($('#containerChoice').val() == ''){
                     alert("Select Container");
@@ -179,7 +177,10 @@
                         data:$(this).serialize(),
                         success:function(data)
                         {
-                            alert(data);
+                            $('#insertResult').html(data);
+                            setTimeout(() => {
+                                $('#insertResult').html("");
+                            }, 2000);
                             $('#sample_form')[0].reset();
                         }
                     });
@@ -189,10 +190,13 @@
                 $('#delete_form').on('submit', function(event){
                 event.preventDefault();
                 if($('#articleIDToRemove').val() == '') {
-                    alert("Enter Article PubmedID or title to remove");
+                    $('#removalResult').html("Please Enter Article PubMed ID/Title");
+                    setTimeout(() => {
+                        $('#removalResult').html("");
+                    }, 2000);
                     return false;
                 }else if($('#containerWithArticle').val() == ''){
-                    alert("Select Container");
+                    $('#removalresult').html("Select Container");
                     return false;
                 }else{
                     $.ajax({
@@ -201,7 +205,10 @@
                         data:$(this).serialize(),
                         success:function(data)
                         {
-                            alert(data);
+                            $('#removalResult').html(data);
+                            setTimeout(() => {
+                                $('#removalResult').html("");
+                            }, 2000);
                             $('#delete_form')[0].reset();
                         }
                     });
@@ -211,7 +218,10 @@
                 $('#move_form').on('submit', function(event){
                 event.preventDefault();
                 if($('#articleMove').val() == '') {
-                    alert("Enter Article PubmedID or title");
+                    $('#moveResult').html("Please Enter Article PubMed ID/Title");
+                    setTimeout(() => {
+                        $('#moveResult').html("");
+                    }, 2000);
                     return false;
                 }else{
                     $.ajax({
@@ -220,73 +230,22 @@
                         data:$(this).serialize(),
                         success:function(data)
                         {
-                            alert(data);
+                            $('#moveResult').html(data);
+                            setTimeout(() => {
+                                $('#moveResult').html("");
+                            }, 2000);
                             $('#sample_form')[0].reset();
                         }
                     });
                 }
                 });
-
-                $(document).on("click", "#downloadData", function () {
-                    $.ajax({
-                        url:"/downloadData.csv",
-                        method:"POST",
-                        data:$(this).serialize(),
-                        success:function(data)
-                        {
-                            alert("Downloading Data");
-                        }
-                    });
-                // $('#downloadData').on('submit', function(event){
-                //     $.ajax({
-                //         url:"/downloadData",
-                //         method:"GET",
-                //         success:function(data)
-                //         {
-                //         alert("Downloading Data");
-                //         }
-                //     });
-
-            });
                             
             });
-
-
         </script>
         
 
         <style>
-            /* body {
-                margin:0;
-                padding:0;
-            } */
-            /* .container{
-                width: 1200px;
-                height: 800px;
-                padding-left: 0px;
-            } */
-            .row{
-                columns: 2;
-                padding-left: 0px;
-                padding-right: 0px;
-                column-gap: 0%;
-                width: auto;
-            }
             
-            .column1{
-                width: auto;
-                padding-right: 100px;
-                margin-left: 0px;
-                margin-right: 0px;
-                margin-top: 0px;
-                margin-bottom: 0px;
-                column-gap: 0px;
-            }
-            .column2{
-                width: 700px;
-                padding-right: 100px;
-                padding-top: 100px;
-            }
             .scroll{
                 width: 700px;
                 height: 600px;
@@ -294,29 +253,6 @@
                 padding-left: 0%;
             }
         
-            .search-table{
-                padding: 0%;
-                margin-top: -6%;
-            }
-            .search-box{
-                background: #c1c1c1;
-                border: 1px solid #ababab;
-                padding: 3%;
-            }
-            .search-box input:focus{
-                box-shadow:none;
-                border:2px solid #eeeeee;
-            }
-            .search-list{
-                background: #fff;
-                border: 1px solid #ababab;
-                border-top: none;
-            }
-            .search-list h3{
-                background: #eee;
-                padding: 3%;color:#fe6f41;
-                margin-bottom: 0%;
-            }
         </style>
 
     </body>

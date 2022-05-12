@@ -157,20 +157,21 @@ def login():
     else:
         return jsonify(message = 'Login unsuccessful. Bad email or password'), 401
 
-@app.route('/articleManager', methods = ['POST', 'GET'])
+@app.route('/articleManager')
 def articleManager():
-    count = 0
-    countIgnore = 0
-    listHolder = []
-    listHolderIgnore = []
-    for item in container.query_items( query='SELECT * FROM pubmed', enable_cross_partition_query=True):
-        count += 1
-        listHolder.append(item['data']['title'])
+    # count = 0
+    # countIgnore = 0
+    # listHolder = []
+    # listHolderIgnore = []
+    # for item in container.query_items( query='SELECT * FROM pubmed', enable_cross_partition_query=True):
+    #     count += 1
+    #     listHolder.append(item['data']['title'])
     
-    for item in container_ignore.query_items( query='SELECT * FROM pubmed_ignore', enable_cross_partition_query=True):
-        countIgnore += 1
-        listHolderIgnore.append(item['data']['title'])
-    return render_template("index.html",articles=listHolder )
+    # for item in container_ignore.query_items( query='SELECT * FROM pubmed_ignore', enable_cross_partition_query=True):
+    #     countIgnore += 1
+    #     listHolderIgnore.append(item['data']['title'])
+    # return render_template("index.html",articles=listHolder )
+    return render_template("index.html")
 
 @app.route("/fetchrecords",methods=["POST","GET"])
 def fetchrecords():
@@ -232,6 +233,7 @@ def insert():
 
 
             return jsonify("" + str(numNewArticles) + " new article(s) added successfully")
+
 
 @app.route('/remove_article', methods=['DELETE'])
 def remove_article():
