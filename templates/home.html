@@ -1,26 +1,141 @@
 {% extends 'content.html' %}
 
 {% block body %}
-    <!-- <section class="resume-section p-3 p-lg-5 d-flex align-items-center" id="publicationanalysis" style="padding-bottom: 0px;";">
+<style type="text/css">
+            /* Parent Container */
+        .content_img{
+        position: relative;
+        width: 330px;
+        height: 330px;
+        float: left;
+        margin-right: 10px;
+        }
+
+        /* Child Text Container */
+        .content_img div{
+        position:sticky;
+        bottom: 0;
+        right: 0;
+        background: black;
+        color: white;
+        margin-bottom: 5px;
+        font-family: sans-serif;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transition: visibility 0s, opacity 0.5s linear; 
+        transition: visibility 0s, opacity 0.5s linear;
+        }
+
+        /* Hover on Parent Container */
+        .content_img:hover{
+        cursor: pointer;
+        }
+
+        .content_img:hover div{
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        padding: 8px 15px;
+        visibility: visible;
+        opacity: 0.5; 
+        }
+  </style>
+  <div style="overflow-y: hidden; overflow-x: hidden;">
+    <div class="resume-section p-3 p-lg-5 d-flex align-items-center" id="publicationanalysis" style="padding-bottom: 0px;";">
         <div class="w-100">
             <h2 class="mb-0">
                 <br/>
                 <div style="text-align: center;">
-                    <span style="font-family: 'Saira Extra Condensed'; color: #20425A; padding-bottom: 0px; padding-top: 0px;"> <b>Publication Analysis</b> </span>
+                    <span style="font-family: 'Saira Extra Condensed'; color: #20425A; padding-bottom: 0px; padding-top: 0px;"> <b>OHDSI Engine of Impact</b> </span>
                 </div>
                 <br/>
             </h2>
         </div>
-    </section>
-    
-    <section id = "pub_dashboard">
+    </div>
+    <div style="padding-left: 70px;">
+        <div class = 'row'>
+            <div class="content_img">
+                <img src='/static/image1.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b>
+                            8 
+                            <br/> 
+                            Years
+                        </b>
+                    </h1>
+                </div>
+            </div>
+            
+            <div class="content_img">
+                <img src='/static/image2.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b>
+                            120 
+                            <br/> 
+                            Institutions
+                        </b>
+                    </h1>
+                </div>
+            </div>
+            <div class="content_img">
+                <img src='/static/image3.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b> 
+                            10
+                            <br/> 
+                            Working Groups
+                        </b>
+                    </h1>
+                </div>
+            </div>
+            
+        </div>
+        ertyuio
+        <div class = 'row'>
+            <div class="content_img">
+                <img src='/static/image3.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b>
+                            500 
+                            <br/> 
+                            Contributors
+                        </b>
+                    </h1>
+                </div>
+            </div>
+            <div class="content_img">
+                <img src='/static/image1.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b>
+                            286
+                            <br/> 
+                            Publications
+                        </b>
+                    </h1>
+                </div>
+            </div>
+            
+            <div class="content_img">
+                <img src='/static/image2.jpg' width='250px' height='100%'>
+                <div>
+                    <h1 style="font-size: 50pt;">
+                        <b>
+                            2000 
+                            <br/> 
+                            Citations
+                        </b>
+                    </h1>
+                </div>
+            </div>
+        </div>
         
-    </section> -->
-    <span>
-        wewefwe
-        <a href="https://www.flaticon.com/free-icons/play-button" title="play button icons">ewf </a>
-
-    </span>
-    <!-- <iframe src="/pub_dashboard" height=800 width="1120px" style="border-width: 0px; padding-left: 0px; padding-top: 0px;" ></iframe> -->
+        
+    </div>
+  </div>
 
 {% endblock %}
