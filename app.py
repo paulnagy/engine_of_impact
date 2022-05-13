@@ -1,3 +1,4 @@
+from distutils.log import error
 from api_miners import key_vault, youtube, pubmed
 from api_miners.pubmed import *
 from azure.cosmos import CosmosClient, PartitionKey
@@ -16,7 +17,7 @@ from ms_identity_web.configuration import AADConfig
 import plotly.express as px
 import pandas as pd 
 #dashapp layouts
-from views import pubs, education
+from views import pubs, education, pubs2
 
 #App Configurations
 app = Flask(__name__)
@@ -58,10 +59,12 @@ ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
 
 #Dash Apps
-pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/pub_dashboard/')
-pubmedDashApp.layout= pubs.build_pubs_dash
+import dash_bootstrap_components as dbc
+external_stylesheets = [dbc.themes.BOOTSTRAP]
+pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/pub_dashboard/', external_stylesheets=external_stylesheets)
+pubmedDashApp.layout= pubs2.build_pubs_dash
 
-youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/')
+youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/', external_stylesheets=external_stylesheets)
 youtubeDashApp.layout= education.build_education_dash
 
 
@@ -69,7 +72,7 @@ youtubeDashApp.layout= education.build_education_dash
 @app.route('/')
 @app.route('/sign_in_status')
 def index():
-    return render_template('mainContent.html')
+    return render_template('home.html')
     # return render_template('auth/status.html')
 
 
@@ -99,31 +102,111 @@ def update_output(value):
         secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
         articleTable = getPMArticles(searchArticles)
         articleTable = articleTable[articleTable['pubYear'] > 2010]
-        specifiedArticle = articleTable['pubmedID'][0]
-        articleTable = articleTable[articleTable.pubmedID.notnull()]
-        articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
-
-        if(numNewArticles == 0):
-            if(specifiedArticle in containerArticles[0]):
-                return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
-            else:
-                return jsonify("This article already exists in the other container. Please verify." )
+        
+        try:
+            specifiedArticle = articleTable['pubmedID'][0]
+        except:
+            return jsonify("This article may not be officially available in the system yet. Check back again...")
         else:
-            
-            articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
-            articleTable = articleTable.reset_index()
-            if ('index' in articleTable.columns):
-                del articleTable['index']
+            specifiedArticle = articleTable['pubmedID'][0]
+            articleTable = articleTable[articleTable.pubmedID.notnull()]
+            articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
 
-            #update the current records
-            # makeCSVJSON(finalTable, key_dict)
-            #update the current records
-            makeCSVJSON(articleTable, key_dict, designatedContainer, False)
+            if(numNewArticles == 0):
+                if(specifiedArticle in containerArticles[0]):
+                    return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
+                else:
+                    return jsonify("This article already exists in the other container. Please verify." )
+            else:
+                
+                articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
+                articleTable = articleTable.reset_index()
+                if ('index' in articleTable.columns):
+                    del articleTable['index']
+
+                #update the current records
+                # makeCSVJSON(finalTable, key_dict)
+                #update the current records
+                makeCSVJSON(articleTable, key_dict, designatedContainer, False)
             
         value = ""
         return '{} new article(s) added successfully'.format(numNewArticles)
         # return pubmedDashApp.index()
         # return dashboard()
+
+
+@pubmedDashApp.callback(
+    Output(component_id='bar-container', component_property='children'),
+    [Input(component_id='datatable-interactivity', component_property="derived_virtual_data"),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_indices'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='active_cell'),
+     Input(component_id='datatable-interactivity', component_property='selected_cells')]
+)
+def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
+               order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
+
+    dff = pd.DataFrame(all_rows_data)
+    df2=dff.groupby('Publication Year')['PubMed ID'].count().reset_index()
+    df2.columns=['Year','Count']
+    if "Year" in df2:
+        return [
+            dcc.Graph(id='bar-chart',
+                        style={'width': '550px'},
+                        figure=px.bar(
+                          data_frame=df2,
+                          x="Year",
+                          y='Count',
+                          title="OHDSI Publications"
+                        #   labels={"did online course": "% of Pop took online course"}
+                      ).update_layout(showlegend=False, 
+                                        xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
+                                        xaxis_tickformat = '%Y',
+                                        title_x=0.5)
+                      .update_traces(hoverinfo= "y", marker=dict(color = '#20425A'))
+                      
+                      )
+        ]
+
+
+@pubmedDashApp.callback(
+    Output(component_id='line-container', component_property='children'),
+    [Input(component_id='datatable-interactivity', component_property="derived_virtual_data"),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_indices'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='active_cell'),
+     Input(component_id='datatable-interactivity', component_property='selected_cells')]
+)
+def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
+               order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
+
+    dff = pd.DataFrame(all_rows_data)
+    df3=dff.groupby('Publication Year')['Citation Count'].sum().reset_index()
+    df3['cumulative']=df3['Citation Count'].cumsum()
+    df3.columns=['Year','citations','Count']
+    if "Year" in df3:
+        return [
+            dcc.Graph(id='line-chart',
+                      style={'width': '550px'},
+                      figure=px.line(
+                          data_frame=df3,
+                          x="Year",
+                          y='Count',
+                          title="OHDSI Cumulative Citations"
+                        #   labels={"did online course": "% of Pop took online course"}
+                      ).update_layout(showlegend=False, 
+                                        xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
+                                        xaxis_tickformat = '%Y',
+                                        title_x=0.5)
+                      .update_traces(hoverinfo= "y", line=dict(color = '#20425A'))
+                      )
+        ]
 
 
 @app.route('/education_dashboard', methods = ['POST', 'GET'])
@@ -171,7 +254,7 @@ def articleManager():
     #     countIgnore += 1
     #     listHolderIgnore.append(item['data']['title'])
     # return render_template("index.html",articles=listHolder )
-    return render_template("index.html")
+    return render_template("articleManager.html")
 
 @app.route("/fetchrecords",methods=["POST","GET"])
 def fetchrecords():
@@ -210,29 +293,35 @@ def insert():
         secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
         articleTable = getPMArticles(searchArticles)
         articleTable = articleTable[articleTable['pubYear'] > 2010]
-        specifiedArticle = articleTable['pubmedID'][0]
-        articleTable = articleTable[articleTable.pubmedID.notnull()]
-        articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
-
-        if(numNewArticles == 0):
-            if(specifiedArticle in containerArticles[0]):
-                return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
-            else:
-                return jsonify("This article already exists in the other container. Please verify." )
+        try:
+            specifiedArticle = articleTable['pubmedID'][0]
+        except KeyError:
+            return jsonify("This article may not be officially available in the system yet. Check back again...")
         else:
-            
-            articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
-            articleTable = articleTable.reset_index()
-            if ('index' in articleTable.columns):
-                del articleTable['index']
 
-            #update the current records
-            # makeCSVJSON(finalTable, key_dict)
-            #update the current records
-            makeCSVJSON(articleTable, key_dict, designatedContainer, False)
+            specifiedArticle = articleTable['pubmedID'][0]
+            articleTable = articleTable[articleTable.pubmedID.notnull()]
+            articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
+
+            if(numNewArticles == 0):
+                if(specifiedArticle in containerArticles[0]):
+                    return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
+                else:
+                    return jsonify("This article already exists in the other container. Please verify." )
+            else:
+                
+                articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
+                articleTable = articleTable.reset_index()
+                if ('index' in articleTable.columns):
+                    del articleTable['index']
+
+                #update the current records
+                # makeCSVJSON(finalTable, key_dict)
+                #update the current records
+                makeCSVJSON(articleTable, key_dict, designatedContainer, False)
 
 
-            return jsonify("" + str(numNewArticles) + " new article(s) added successfully")
+                return jsonify("" + str(numNewArticles) + " new article(s) added successfully")
 
 
 @app.route('/remove_article', methods=['DELETE'])

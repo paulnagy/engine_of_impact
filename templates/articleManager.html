@@ -62,20 +62,20 @@
                     </h4>
                     </li>
                     <li class="nav-item">
-                    <a class="nav-link js-scroll-trigger" href="#overview">Overview</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link js-scroll-trigger" href="#metadata">Metadata</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link js-scroll-trigger active" href="#results">Results</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link js-scroll-trigger" href="#about">About</a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link js-scroll-trigger" href="/auth/sign_in">Sign In</a>
-                    </li>
+                        <a class="nav-link js-scroll-trigger" href="/">Overview</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link js-scroll-trigger" href="/publication_dashboard">Publication Analysis</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link js-scroll-trigger " href="/education_dashboard">Education Analysis</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link js-scroll-trigger" href="#about">About</a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link js-scroll-trigger" href="/auth/sign_in">Sign In</a>
+                      </li>
                 </ul>
                 
             </div>
@@ -122,7 +122,7 @@
                 </div>
 
                 <div class="form-group">
-                    <input type="submit" name="Remove Article" id="removeArticle" class="btn btn-success" value="Remove Article">
+                    <input type="submit" name="Remove Article" id="removeArticle" class="btn btn-success" value="Remove Article" style="background-color: #20425A;">
                     
                 </div>
             </form>
@@ -181,7 +181,7 @@
                             setTimeout(() => {
                                 $('#insertResult').html("");
                             }, 2000);
-                            $('#sample_form')[0].reset();
+                            $('#insert_form')[0].reset();
                         }
                     });
                 }
@@ -234,7 +234,7 @@
                             setTimeout(() => {
                                 $('#moveResult').html("");
                             }, 2000);
-                            $('#sample_form')[0].reset();
+                            $('#move_form')[0].reset();
                         }
                     });
                 }
