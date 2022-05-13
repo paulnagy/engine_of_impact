@@ -2,7 +2,9 @@ from azure.cosmos import CosmosClient,PartitionKey
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from oauth2client.tools import argparser
+# import key_vault as kv
 from api_miners import key_vault as kv
+
 
 from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec%3Aentrez-specialized-parsers
 import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
@@ -20,6 +22,7 @@ from os.path import exists
 from pprint import pprint
 from collections import defaultdict, Counter
 from dateutil.parser import *
+# import verifiedPubMedArticles as vf
 import ast
 
 def init_cosmos(key_dict: dict, container_name:str):
@@ -273,7 +276,7 @@ def serpApiExtract(extractedResult):
     From the JSON object produced by saveRawSerpApiAsDict(), 
         extract title, author, and citation information based on rules.
     """
-    searchDict = {"citationInfo": {}, 'firstAuthorInfo': {}, 'fullAuthorInfo': {}, 'titleAuthorStr': {}, 'citationChangesSinceLast': {}}
+    searchDict = {"citationInfo": {}, 'firstAuthorInfo': {}, 'fullAuthorInfo': {}, 'titleAuthorStr': {}, 'googleScholarLink': {}}
     dashIndex = 0
     #if there is more than one article returned
     if(len(extractedResult['gScholarQResults']) < 2):
@@ -282,9 +285,12 @@ def serpApiExtract(extractedResult):
         #if there is no citation information, set to 0
         if(('cited_by' in extractedResult['gScholarQResults'][0]['inline_links'].keys()) == False):
             searchDict['citationInfo'][title] = 0
+            searchDict['googleScholarLink'][title] = "Link Not Available"
         else:
             numCitedBy = extractedResult['gScholarQResults'][0]['inline_links']['cited_by']['total']
+            googleScholarLink = extractedResult['gScholarQResults'][0]['inline_links']['versions']['link']
             searchDict['citationInfo'][title] = numCitedBy
+            searchDict['googleScholarLink'][title] = googleScholarLink
 
         #find author(s) if it is populated
         if(('authors' in extractedResult['gScholarQResults'][0]['publication_info']) == False):
@@ -325,6 +331,7 @@ def serpApiExtract(extractedResult):
                 #otherwise, set to 0
                 else:
                     searchDict['citationInfo'][title] = 0
+                    searchDict['googleScholarLink'][title] = "Link Not Available"
             else:
                 if(title in searchDict['citationInfo'].keys()):
                     if(searchDict['citationInfo'][title] > 0):
@@ -333,10 +340,14 @@ def serpApiExtract(extractedResult):
                             title = extractedResult['gScholarQResults'][i]['title']
                     else:
                         numCitedBy = extractedResult['gScholarQResults'][i]['inline_links']['cited_by']['total']
+                        googleScholarLink = extractedResult['gScholarQResults'][0]['inline_links']['versions']['link']
                         searchDict['citationInfo'][title] = numCitedBy
+                        searchDict['googleScholarLink'][title] = googleScholarLink
                 else:
                     numCitedBy = extractedResult['gScholarQResults'][i]['inline_links']['cited_by']['total']
+                    googleScholarLink = extractedResult['gScholarQResults'][0]['inline_links']['versions']['link']
                     searchDict['citationInfo'][title] = numCitedBy
+                    searchDict['googleScholarLink'][title] = googleScholarLink
 
             #find author(s) if it is populated
             if(('authors' in extractedResult['gScholarQResults'][i]['publication_info']) == False):
@@ -372,7 +383,7 @@ def serpApiExtract(extractedResult):
 
     return searchDict
 
-def getGoogleScholarCitation(row,serp_api_key):
+def getGoogleScholarCitation(row, serp_api_key):
     """
     Called in main() and applied to each row of the table output from getPMArticles()
     Output into 4 new columns: 
@@ -393,19 +404,19 @@ def getGoogleScholarCitation(row,serp_api_key):
         dictArticlesToMatch = serpApiExtract(appendedResults)
     strOptions = dictArticlesToMatch['titleAuthorStr'].keys()
     if(len(strOptions) == 0):
-        result = ["NA", "NA", "NA", "NA"]
+        result = ["NA", "NA", "NA", "NA", "NA"]
         return result
     
     elif(len(strOptions) == 1):
         title = list(dictArticlesToMatch['titleAuthorStr'].values())[0]
         levenP = fuzz.token_set_ratio(searchTitle, list(dictArticlesToMatch['titleAuthorStr'].keys())[0])
-        result = [title, dictArticlesToMatch['citationInfo'][title], levenP, dictArticlesToMatch['fullAuthorInfo'][title]]
+        result = [title, dictArticlesToMatch['citationInfo'][title], levenP, dictArticlesToMatch['fullAuthorInfo'][title], dictArticlesToMatch['googleScholarLink'][title]]
         return result
     
     elif(len(strOptions) > 1):
         result = process.extractOne(str(searchTitle), strOptions) #extract the highest probability of match
         title = dictArticlesToMatch['titleAuthorStr'][result[0]]
-        result = [title, dictArticlesToMatch['citationInfo'][title], result[1], dictArticlesToMatch['fullAuthorInfo'][title]]
+        result = [title, dictArticlesToMatch['citationInfo'][title], result[1], dictArticlesToMatch['fullAuthorInfo'][title], dictArticlesToMatch['googleScholarLink'][title]]
         return result
 
 def getLastUpdatedCitations(key_dict: dict, containerName):
@@ -459,17 +470,21 @@ def fetchCurrentDataAndUpdate(key_dict: dict, containerName):
     return result
 
 
-def makeCSVJSON(table, key_dict: dict):
+def makeCSVJSON(table, key_dict: dict, containerChosen: str, forUpdate: bool):
     """
     Called in main()
     Add new records to the existing records and update container
     """
     container = init_cosmos(key_dict, 'pubmed')
     container_ignore = init_cosmos(key_dict, 'pubmed_ignore')
-    data = fetchCurrentDataAndUpdate(key_dict, 'pubmed')
-    data_ignore = fetchCurrentDataAndUpdate(key_dict, 'pubmed_ignore')
-    for key in data_ignore:
-        data[key] = data_ignore[key]
+    container_chosen = init_cosmos(key_dict, containerChosen)
+    if(forUpdate):
+        data = fetchCurrentDataAndUpdate(key_dict, 'pubmed')
+        data_ignore = fetchCurrentDataAndUpdate(key_dict, 'pubmed_ignore')
+        for key in data_ignore:
+            data[key] = data_ignore[key]
+    else: 
+        data = defaultdict(list)
     d_timeseries = defaultdict(list)
     
     #format table into dictionary
@@ -479,10 +494,11 @@ def makeCSVJSON(table, key_dict: dict):
         for k in table.columns:  
             if (k == 'pubmedID'):
                 d_articleInfo[k] = str(int(float(table[k][row])))
-            elif (k in ['pmcID', 'nlmID', 'journalTitle', 'title', 'creationDate', 'affiliation', 'locID', 'countryOfPub', 'language',
-                        'grantNum', 'fullAuthor', 'source', 'fullAuthorEdited', 'firstAuthor', 'meshT',
+            elif (k in ['pmcID', 'nlmID', 'journalTitle', 'title', 'creationDate', 'affiliation', 'locID',
+                        'countryOfPub', 'language','grantNum', 'fullAuthor', 'source', 
+                        'fullAuthorEdited', 'firstAuthor', 'meshT',
                         'titleAuthorStr', 'foundInGooScholar', 
-                        'fullAuthorGooScholar']):
+                        'fullAuthorGooScholar', 'googleScholarLink']):
                 d_articleInfo[k] = str(table[k][row])
             elif( k in ['pubYear', 'levenProb']):
                 d_articleInfo[k] = int(float(table[k][row]))
@@ -515,7 +531,7 @@ def makeCSVJSON(table, key_dict: dict):
             )
         
         else:
-            container.upsert_item({
+            container_chosen.upsert_item({
                     'id': k,
                     'data': v
                 }
@@ -561,13 +577,13 @@ def retrieveAsTable(key_dict: dict, beforeCalculateCitationChanges: bool, contai
     grantNum, fullAuthor, meshT, source, fullAuthorEdited = [],[],[],[],[]
     firstAuthor, pubYear, titleAuthorStr, datePulled = [],[],[],[]
     if(beforeCalculateCitationChanges == False):
-        foundInGooScholar, numCitations , levenProb, fullAuthorGooScholar = [],[],[],[]
+        foundInGooScholar, numCitations , levenProb, fullAuthorGooScholar, googleScholarLink = [],[],[],[],[]
 
     colNames = ['pmcID', 'pubmedID', 'nlmID', 'journalTitle', 'title',
            'creationDate', 'affiliation', 'locID', 'countryOfPub', 'language',
            'grantNum', 'fullAuthor', 'meshT', 'source', 'fullAuthorEdited',
            'firstAuthor', 'pubYear', 'titleAuthorStr', 'datePulled',
-            'foundInGooScholar','numCitations', 'levenProb', 'fullAuthorGooScholar']
+            'foundInGooScholar','numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']
     if(beforeCalculateCitationChanges):
         colNames = colNames[0:19]
 
@@ -602,6 +618,7 @@ def retrieveAsTable(key_dict: dict, beforeCalculateCitationChanges: bool, contai
                 numCitations.append(item['data']['trackingChanges'][i]['numCitations'])
                 levenProb.append(item['data']['levenProb'])
                 fullAuthorGooScholar.append(item['data']['fullAuthorGooScholar'])
+                googleScholarLink.append(item['data']['googleScholarLink'])
             if(beforeCalculateCitationChanges == True):
                 break
 
@@ -609,7 +626,7 @@ def retrieveAsTable(key_dict: dict, beforeCalculateCitationChanges: bool, contai
             df = pd.DataFrame([pmcID, pubmedID, nlmID, journalTitle, title, creationDate, affiliation, 
                                locID, countryOfPub, language, grantNum, fullAuthor, meshT, source, 
                                fullAuthorEdited, firstAuthor, pubYear, titleAuthorStr, datePulled,
-                               foundInGooScholar, numCitations, levenProb, fullAuthorGooScholar]).T
+                               foundInGooScholar, numCitations, levenProb, fullAuthorGooScholar, googleScholarLink]).T
         else:
             df = pd.DataFrame([pmcID, pubmedID, nlmID, journalTitle, title, creationDate, affiliation, 
                                locID, countryOfPub, language, grantNum, fullAuthor, meshT, source, 
@@ -685,56 +702,56 @@ def includeMissingCurrentArticles(table, key_dict: dict):
             
     return outputTable
 
-def main():
-    #initialize the cosmos db dictionary
-    key_dict = kv.get_key_dict()
-    dateMY = "" + date.datetime.now().strftime("%m-%d-%Y")[0:2] + date.datetime.now().strftime("%m-%d-%Y")[5:10]
-    secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
+# def main():
+#     #initialize the cosmos db dictionary
+#     key_dict = kv.get_key_dict()
+#     dateMY = "" + date.datetime.now().strftime("%m-%d-%Y")[0:2] + date.datetime.now().strftime("%m-%d-%Y")[5:10]
+#     secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
     
-    #search terms/strings
-    searchAll = ['ohdsi', 'omop', 'Observational Medical Outcomes Partnership Common Data Model', \
-             '"Observational Medical Outcomes Partnership"', '"Observational Health Data Science and Informatics"']  
-    # searchAll = addTheseArticles   #27 without relevent key words in the title/abstract/author
+#     #search terms/strings
+#     searchAll = ['ohdsi', 'omop', 'Observational Medical Outcomes Partnership Common Data Model', \
+#              '"Observational Medical Outcomes Partnership"', '"Observational Health Data Sciences and Informatics"']  
+#     # searchAll = addTheseArticles   #27 without relevent key words in the title/abstract/author
     
-    #first search pubmed
-    finalTable = getPMArticles(searchAll)
-    finalTable = includeMissingCurrentArticles(finalTable, key_dict)
-    finalTable = finalTable[finalTable['pubYear'] > 2010]
-    numNewArticles = 0
-    #check if an update has already been performed this month
-    if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] == dateMY):
-        print("Already updated this month on " + getTimeOfLastUpdate(key_dict))
-        print("Identifying new articles...")
-        #check if an update has already been performed today
-        if(getTimeOfLastUpdate(key_dict) != str("" + date.datetime.now().strftime("%m-%d-%Y"))):
-            #if not search and filter for new articles
-            finalTable, numNewArticles = identifyNewArticles(finalTable, key_dict)
-            #if no new articles are found. End the update/script.
-            if(numNewArticles == 0):
-                print("" + str(numNewArticles) + " new articles found. Update is not needed." )
-            else:
-                print("" + str(numNewArticles) + " new articles found. Proceed to update..." )
-        else:
-            print("Already checked for new articles today. Come back later:)")
-    else:
-        print("First update of the month.")
+#     #first search pubmed
+#     finalTable = getPMArticles(searchAll)
+#     finalTable = includeMissingCurrentArticles(finalTable, key_dict)
+#     finalTable = finalTable[finalTable['pubYear'] > 2010]
+#     numNewArticles = 0
+#     #check if an update has already been performed this month
+#     if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] == dateMY):
+#         print("Already updated this month on " + getTimeOfLastUpdate(key_dict))
+#         print("Identifying new articles...")
+#         #check if an update has already been performed today
+#         if(getTimeOfLastUpdate(key_dict) != str("" + date.datetime.now().strftime("%m-%d-%Y"))):
+#             #if not search and filter for new articles
+#             finalTable, numNewArticles = identifyNewArticles(finalTable, key_dict)
+#             #if no new articles are found. End the update/script.
+#             if(numNewArticles == 0):
+#                 print("" + str(numNewArticles) + " new articles found. Update is not needed." )
+#             else:
+#                 print("" + str(numNewArticles) + " new articles found. Proceed to update..." )
+#         else:
+#             print("Already checked for new articles today. Come back later:)")
+#     else:
+#         print("First update of the month.")
 
-    #if it is the first update of the month, or if new articles have been found within the same month, upsert those articles
-    if((getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY) or (numNewArticles > 0)):
-        #search google scholar and create 4 new columns
-        finalTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar']] = finalTable.apply(lambda x: getGoogleScholarCitation(x,key_dict['SERPAPI_KEY']), axis = 1, result_type='expand')
-        finalTable = finalTable.reset_index()
-        if ('index' in finalTable.columns):
-            del finalTable['index']
-            #del finalTable['level_0']
+#     #if it is the first update of the month, or if new articles have been found within the same month, upsert those articles
+#     if((getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY) or (numNewArticles > 0)):
+#         #search google scholar and create 4 new columns
+#         finalTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = finalTable.apply(lambda x: getGoogleScholarCitation(x, key_dict['SERPAPI_KEY']), axis = 1, result_type='expand')
+#         finalTable = finalTable.reset_index()
+#         if ('index' in finalTable.columns):
+#             del finalTable['index']
+#             del finalTable['level_0']
 
-        #update the current records
-        makeCSVJSON(finalTable, key_dict)
-        print("Update complete.")
-    else:
-        print("No updates were performed.")
+#         #update the current records
+#         makeCSVJSON(finalTable, key_dict)
+#         print("Update complete.")
+#     else:
+#         print("No updates were performed.")
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
     #run the following line if any one or more articles need to be moved to another container. 
 #     moveItemToIgnoreContainer(key_dict, ['27028034'], 'pubmed', 'pubmed_ignore')
