@@ -15,9 +15,11 @@ from ms_identity_web import IdentityWebPython
 from ms_identity_web.adapters import FlaskContextAdapter
 from ms_identity_web.configuration import AADConfig
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd 
 #dashapp layouts
-from views import pubs, education, pubs2
+from views import pubs, education
 
 #App Configurations
 app = Flask(__name__)
@@ -62,7 +64,7 @@ ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 import dash_bootstrap_components as dbc
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/pub_dashboard/', external_stylesheets=external_stylesheets)
-pubmedDashApp.layout= pubs2.build_pubs_dash
+pubmedDashApp.layout= pubs.build_pubs_dash
 
 youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/', external_stylesheets=external_stylesheets)
 youtubeDashApp.layout= education.build_education_dash
@@ -144,32 +146,89 @@ def update_output(value):
      Input(component_id='datatable-interactivity', component_property='derived_virtual_indices'),
      Input(component_id='datatable-interactivity', component_property='derived_virtual_row_ids'),
      Input(component_id='datatable-interactivity', component_property='active_cell'),
-     Input(component_id='datatable-interactivity', component_property='selected_cells')]
+     Input(component_id='datatable-interactivity', component_property='selected_cells')], prevent_initial_call=True
 )
 def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
                order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
 
     dff = pd.DataFrame(all_rows_data)
-    df2=dff.groupby('Publication Year')['PubMed ID'].count().reset_index()
+    df2=((dff.groupby('Publication Year')['PubMed ID']).count()).reset_index()
     df2.columns=['Year','Count']
-    if "Year" in df2:
-        return [
-            dcc.Graph(id='bar-chart',
-                        style={'width': '550px'},
-                        figure=px.bar(
-                          data_frame=df2,
-                          x="Year",
-                          y='Count',
-                          title="OHDSI Publications"
-                        #   labels={"did online course": "% of Pop took online course"}
-                      ).update_layout(showlegend=False, 
-                                        xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
-                                        xaxis_tickformat = '%Y',
-                                        title_x=0.5)
-                      .update_traces(hoverinfo= "y", marker=dict(color = '#20425A'))
+    df3=((dff.groupby('Publication Year')['Citation Count']).sum()).reset_index()
+    df3['cumulative']=df3['Citation Count'].cumsum()
+    df3.columns=['Year','citations','Count']
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add traces
+    fig.add_trace(
+        go.Bar(
+            x=df2['Year'],
+            y=df2['Count'],
+            marker=dict(color = '#20425A'),
+            hovertemplate =
+                '<i>Publications in %{x}</i>: %{y:.0f}<extra></extra>',
+            showlegend = False
+            
+            ), 
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Line(
+            x=df3['Year'],
+            y=df3['Count'],
+            marker=dict(color = '#f6ac15'),
+            hovertemplate =
+                '<i>Citations in %{x}</i>: %{y:.0f}<extra></extra>',
+
+            ),
+            
+        secondary_y='Secondary'
+    )
+
+    # Add figure title
+    fig.update_layout(title_text="<b> OHDSI Publications & Citations</b>", title_x=0.5, showlegend=False)
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Year")
+
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text="Number of Publications", 
+        secondary_y=False)
+    fig.update_yaxes(
+        title_text="Number of Citations", 
+        secondary_y=True)
+
+    return [
+        dcc.Graph(id = 'bar-chart', 
+                    figure = fig.update_layout(yaxis={'tickformat': '{:,}'}),
+                    style={'width': '600px'},
+                    )
+            ]
+    # if "Year" in df2:
+    #     return [
+    #         dcc.Graph(id='bar-chart',
+    #                     style={'width': '550px'},
+    #                     figure=px.bar(
+    #                       data_frame=df2,
+    #                       x="Year",
+    #                       y='Count',
+    #                       title="OHDSI Publications"
+    #                     #   labels={"did online course": "% of Pop took online course"}
+    #                   )
+    #                   .update_layout(showlegend=False, 
+    #                                     xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
+    #                                     xaxis_tickformat = '%Y',
+    #                                     title_x=0.5)
+    #                   .update_traces(hoverinfo= "y", marker=dict(color = '#20425A'))
                       
-                      )
-        ]
+                      
+
+                      
+                      
+    #                   )
+    #     ]
 
 
 @pubmedDashApp.callback(
@@ -181,7 +240,7 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
      Input(component_id='datatable-interactivity', component_property='derived_virtual_indices'),
      Input(component_id='datatable-interactivity', component_property='derived_virtual_row_ids'),
      Input(component_id='datatable-interactivity', component_property='active_cell'),
-     Input(component_id='datatable-interactivity', component_property='selected_cells')]
+     Input(component_id='datatable-interactivity', component_property='selected_cells')], prevent_initial_call=True
 )
 def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
                order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
