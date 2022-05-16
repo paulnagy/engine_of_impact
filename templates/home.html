@@ -1,141 +1,484 @@
 {% extends 'content.html' %}
 
 {% block body %}
-<style type="text/css">
-            /* Parent Container */
-        .content_img{
-        position: relative;
-        width: 330px;
-        height: 330px;
-        float: left;
-        margin-right: 10px;
-        }
+<style>
+    /* body{
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #23E3C9;
+    } */
 
-        /* Child Text Container */
-        .content_img div{
-        position:sticky;
-        bottom: 0;
-        right: 0;
-        background: black;
-        color: white;
-        margin-bottom: 5px;
-        font-family: sans-serif;
-        opacity: 0;
-        visibility: hidden;
-        -webkit-transition: visibility 0s, opacity 0.5s linear; 
-        transition: visibility 0s, opacity 0.5s linear;
-        }
+    .slider{
+      width: 1400px;
+      height: 550px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
-        /* Hover on Parent Container */
-        .content_img:hover{
-        cursor: pointer;
-        }
+    .slides{
+      width: 500%;
+      /* width: 1400px; */
+      height: 550px;
+      display: flex;
+    }
 
-        .content_img:hover div{
-        position: absolute;
-        width: 300px;
-        height: 300px;
-        padding: 8px 15px;
-        visibility: visible;
-        opacity: 0.5; 
-        }
+    .slides input{
+      display: none;
+    }
+
+    .slide{
+      /* width: 20%; */
+      transition: 2s;
+    }
+
+    /* .slide img{
+      width: 800px;
+      height: 500px;
+    } */
+
+    /*css for manual slide navigation*/
+
+    .navigation-manual{
+      position: absolute;
+      width: 1400px;
+      margin-top: -40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .manual-btn{
+      border: 2px solid #f6ac15;
+      padding: 5px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 1s;
+    }
+
+    .manual-btn:not(:last-child){
+      margin-right: 40px;
+    }
+
+    .manual-btn:hover{
+      background: #f6ac15;
+    }
+
+    #radio1:checked ~ .first{
+      margin-left: 0;
+    }
+
+    #radio2:checked ~ .first{
+      margin-left: -20%;
+    }
+
+    #radio3:checked ~ .first{
+      margin-left: -40%;
+    }
+
+    #radio4:checked ~ .first{
+      margin-left: -60%;
+    }
+
+    /*css for automatic navigation*/
+
+    .navigation-auto{
+      position: absolute;
+      display: flex;
+      width: 1400px;
+      justify-content: center;
+      margin-top: 510px;
+    }
+
+    .navigation-auto div{
+      border: 2px solid #f6ac15;
+      padding: 5px;
+      border-radius: 10px;
+      transition: 1s;
+    }
+
+    .navigation-auto div:not(:last-child){
+      margin-right: 40px;
+    }
+
+    #radio1:checked ~ .navigation-auto .auto-btn1{
+      background: #20425A;
+    }
+
+    #radio2:checked ~ .navigation-auto .auto-btn2{
+      background: #20425A;
+
+    }
+
+    #radio3:checked ~ .navigation-auto .auto-btn3{
+      background: #20425A;
+
+    }
+
+    #radio4:checked ~ .navigation-auto .auto-btn4{
+      background: #40D3DC;
+
+    }
   </style>
-  <div style="overflow-y: hidden; overflow-x: hidden;">
-    <div class="resume-section p-3 p-lg-5 d-flex align-items-center" id="publicationanalysis" style="padding-bottom: 0px;";">
-        <div class="w-100">
-            <h2 class="mb-0">
-                <br/>
-                <div style="text-align: center;">
-                    <span style="font-family: 'Saira Extra Condensed'; color: #20425A; padding-bottom: 0px; padding-top: 0px;"> <b>OHDSI Engine of Impact</b> </span>
-                </div>
-                <br/>
-            </h2>
-        </div>
+    
+  <div>
+    <div class="w-100">
+        <h2 class="mb-0">
+            <br/>
+            <div style="text-align: center;">
+                <span style="font-family: 'Saira Extra Condensed'; color: #20425A; font-size: 30pt;"> <b>OHDSI Engine of Impact</b> </span>
+            </div>
+            <br/>
+            <br/>
+        </h2>
     </div>
-    <div style="padding-left: 70px;">
-        <div class = 'row'>
-            <div class="content_img">
-                <img src='/static/image1.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b>
-                            8 
-                            <br/> 
-                            Years
-                        </b>
-                    </h1>
+    <!--image slider start-->
+    <div class="slider" onmouseenter="stopSlide(this)" onmouseleave="startSlide(this)">
+        <div class="slides">
+        <!--radio buttons start-->
+        <input type="radio" name="radio-btn" id="radio1">
+        <input type="radio" name="radio-btn" id="radio2">
+        <input type="radio" name="radio-btn" id="radio3">
+        <!-- <input type="radio" name="radio-btn" id="radio4"> -->
+        <!--radio buttons end-->
+        <!--slide images start-->
+        <div class="slide first" style="width: 1400px; height: 600px;">
+            <div class = 'row'>
+                <div class = 'col' style="text-align: center;">
+                    <div>
+                        <img src='/static/home_logos/group2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt; text-align: center">
+                            <b>
+                                10 
+                                <br/> 
+                                Working Groups
+                            </b>
+                        </h1>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="content_img">
-                <img src='/static/image2.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b>
-                            120 
-                            <br/> 
-                            Institutions
-                        </b>
-                    </h1>
+                <div class = 'col' style="text-align: center;">
+                    <div>
+                        <img src='/static/home_logos/eden2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt; text-align: center">
+                            <b>
+                                24
+                                <br/> 
+                                OHDSI Courses
+                            </b>
+                        </h1>
+                    </div>
                 </div>
-            </div>
-            <div class="content_img">
-                <img src='/static/image3.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b> 
-                            10
-                            <br/> 
-                            Working Groups
-                        </b>
-                    </h1>
+                
+                
+                <div class = 'col' style="text-align: center;" style="text-align: center;">
+                    <div >
+                        <img src='/static/home_logos/network2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt;">
+                            <b>
+                                20 
+                                <br/> 
+                                Network Studies
+                            </b>
+                        </h1>
+                    </div>
                 </div>
+                
+                
             </div>
-            
+            <br/>
+            <div class = 'row'>
+                <div class = 'col' style="text-align: center;">
+                    <div>
+                        <img src='/static/home_logos/github2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt; text-align: center">
+                            <b>
+                                500 Contributors
+                                <br/> 
+                                1 Million+ Lines of Code
+                            </b>
+                        </h1>
+                    </div>
+                </div>
+                <div class = 'col' style="text-align: center;">
+                    <div>
+                        <img src='/static/home_logos/youtube2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt; text-align: center">
+                            <b>
+                                100 
+                                <br/> 
+                                Videos
+                            </b>
+                        </h1>
+                    </div>
+                </div>
+                <div class = 'col' style="text-align: center;">
+                    <div>
+                        <img src='/static/home_logos/publication2.png' width='150px' height='150px'>
+                    </div>
+                    <div>
+                        <h1 style="font-size: 24pt; text-align: center">
+                            <b>
+                                245
+                                <br/> 
+                                Publications
+                            </b>
+                        </h1>
+                    </div>
+                </div>
+                
+                
+            </div>
         </div>
-        ertyuio
-        <div class = 'row'>
-            <div class="content_img">
-                <img src='/static/image3.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b>
-                            500 
-                            <br/> 
-                            Contributors
-                        </b>
-                    </h1>
+        <div class="slide" style="width: 1400px; height: 600px;">
+            <div >
+                <div class = 'row'>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/clock.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    18 
+                                    <br/> 
+                                    Years
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/institution.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    120 
+                                    <br/> 
+                                    Institutions
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/group.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    10 
+                                    <br/> 
+                                    Working Groups
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
                 </div>
-            </div>
-            <div class="content_img">
-                <img src='/static/image1.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b>
-                            286
-                            <br/> 
-                            Publications
-                        </b>
-                    </h1>
-                </div>
-            </div>
-            
-            <div class="content_img">
-                <img src='/static/image2.jpg' width='250px' height='100%'>
-                <div>
-                    <h1 style="font-size: 50pt;">
-                        <b>
-                            2000 
-                            <br/> 
-                            Citations
-                        </b>
-                    </h1>
+                <br/>
+                <div class = 'row'>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/user2.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    500
+                                    <br/> 
+                                    Contributors
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/publication2.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    245
+                                    <br/> 
+                                    Publications
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/link.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    2000
+                                    <br/> 
+                                    Citations
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        
+        <div class="slide" style="width: 1400px; height: 600px;">
+            <div >
+                <div class = 'row'>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/clock.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    28 
+                                    <br/> 
+                                    Years
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/institution.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    120 
+                                    <br/> 
+                                    Institutions
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/group.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    10 
+                                    <br/> 
+                                    Working Groups
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                </div>
+                <br/>
+                <div class = 'row'>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/user2.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    500
+                                    <br/> 
+                                    Contributors
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/publication2.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    245
+                                    <br/> 
+                                    Publications
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                    
+                    <div class = 'col' style="text-align: center;">
+                        <div>
+                            <img src='/static/home_logos/link.png' width='150px' height='150px'>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24pt; text-align: center">
+                                <b>
+                                    2000
+                                    <br/> 
+                                    Citations
+                                </b>
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="slide">
+            <img src="4.jpg" alt="">
+        </div> -->
+        <!--slide images end-->
+        <!--automatic navigation start-->
+        <div class="navigation-auto">
+            <div class="auto-btn1"></div>
+            <div class="auto-btn2"></div>
+            <div class="auto-btn3"></div>
+            <!-- <div class="auto-btn4"></div> -->
+        </div>
+        <!--automatic navigation end-->
+        </div>
+        <!--manual navigation start-->
+        <div class="navigation-manual">
+        <label for="radio1" class="manual-btn"></label>
+        <label for="radio2" class="manual-btn"></label>
+        <label for="radio3" class="manual-btn"></label>
+        <!-- <label for="radio4" class="manual-btn"></label> -->
+        </div>
+        <!--manual navigation end-->
     </div>
-  </div>
+  <!--image slider end-->
+</div>
+  <script type="text/javascript">
+    var inSlide = false;
+    function stopSlide(x) {
+        inSlide = true;
+    }
+
+    function startSlide(x) {
+        inSlide = false;
+    }
+    document.getElementById('radio1').checked = true;
+    var counter = 2;
+    setInterval(function(){
+        if(inSlide == false){
+            document.getElementById('radio' + counter).checked = true;
+            counter++;
+            if(counter > 3){
+                counter = 1;
+            }
+        }
+        
+    }, 5000);
+  
+  </script>
 
 {% endblock %}
