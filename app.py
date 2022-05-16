@@ -203,7 +203,7 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
     return [
         dcc.Graph(id = 'bar-chart', 
                     figure = fig.update_layout(yaxis={'tickformat': '{:,}'}),
-                    style={'width': '600px'},
+                    style={'width': '750px', 'padding-left': '50px'},
                     )
             ]
     # if "Year" in df2:
@@ -252,7 +252,7 @@ def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
     if "Year" in df3:
         return [
             dcc.Graph(id='line-chart',
-                      style={'width': '550px'},
+                      style={'width': '650px'},
                       figure=px.line(
                           data_frame=df3,
                           x="Year",

@@ -18,7 +18,7 @@
       .footer {
         margin-left: 320px; /* Same as the width of the sidenav */
       }
-      .sidenav {
+      .topnav {
         height: 100%;
         width: 320px;
         position: fixed;
@@ -30,7 +30,7 @@
         padding-top: 15%;
       }
 
-      .sidenav a {
+      .topnav a {
         padding: 6px 6px 6px 32px;
         text-decoration: none;
         font-size: 25px;
@@ -39,30 +39,35 @@
         display: block;
       }
 
-      .sidenav a:hover {
+      .topnav a:hover {
         color: #f1f1f1;
       }
     </style>
   </head>
-  <body >
+  <body style="overflow-y: hidden; overflow-x: hidden;">
 
-    <div class="container-fluid" >
-      <!-- <nav class="navbar navbar-expand-lg navbar-light bg-light">
-          <a class="navbar-brand" href="/">Engine of Impact: OHDSI</a>
+    <div >
+      <nav class="navbar navbar-expand-lg" style="background-color: #20425A;">
+          <a>
+            <span class="d-none d-lg-block">
+              <img class="img-fluid mx-auto mb-2" style="width: 250px; height: 60px; padding-left: 0px; padding-right: 20px;" src="/static/ohdsi_logo.png" alt="">
+            </span>
+          </a>
+          <a class="navbar-brand" href="/" style="color: #f1f1f1;"> OHDSI Engine of Impact</a>
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
         
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
+            <ul class="navbar-nav mr-auto" >
               <li class="nav-item active">
-                <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                <a class="nav-link" href="/" style="color: #f1f1f1;">Home <span class="sr-only">(current)</span></a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">Link</a>
+                <a class="nav-link" href="#" style="color: #f1f1f1;">Link</a>
               </li>
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color: #f1f1f1;">
                   Dashboards
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -74,15 +79,16 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">About Us</a>
+                <a class="nav-link" href="#"  style="color: #f1f1f1;">About Us</a>
               </li>
             </ul>
             <div class="btn-group ml-auto dropleft">
-              {% include "auth/auth-bar-items.html" %}
+                <a class="nav-link" href="/auth/sign_in"  style="color: #f1f1f1;">Sign In</a>
             </div>
           </div>
-      </nav> -->
-      <div class="sidenav" style="text-align: center;">
+      </nav>
+      
+      <!-- <div class="topnav" style="text-align: center;">
         <a class="navbar-brand js-scroll-trigger" href="#page-top">
           <span class="d-none d-lg-block">
             <img class="img-fluid mx-auto mb-2" src="/static/ohdsi_logo.png" alt="">
@@ -112,10 +118,10 @@
             </li>
           </ul>
         
-      </div>
+      </div> -->
     </div>
     
-    <div class="main" style="font-family: 'Saira Extra Condensed'; overflow-x: hidden; overflow-y: auto;">
+    <div style="font-family: 'Saira Extra Condensed'; overflow-x: hidden;">
 
         {% block body %}{% endblock %}
 
@@ -126,7 +132,20 @@
     </div>
    
     {% block flash_messages %}{% endblock %}
-    
+    <script>
+      $(document).ready(function(){
+          // Show hide popover
+          $(".nav-item").click(function(){
+              $(this).find(".dropdown-menu").slideToggle("fast");
+          });
+      });
+      $(document).on("click", function(event){
+          var $trigger = $(".nav-item");
+          if($trigger !== event.target && !$trigger.has(event.target).length){
+              $(".dropdown-menu").slideUp("fast");
+          }            
+      });
+  </script>
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
