@@ -1,9 +1,11 @@
 import dash
+import dash_bootstrap_components as dbc
 import ast
 from dash import dcc, html, dash_table
 from api_miners import key_vault, pubmed
 import plotly.express as px
 import pandas as pd 
+
 
 def build_pubs_dash():
     container_name='pubmed'
@@ -85,7 +87,7 @@ def build_pubs_dash():
         )
     fig.update_layout(showlegend=False, font_family="Saira Extra Condensed")
     df1['Publication']=df1.apply(lambda row:"[{}](http://pubmed.gov/{})".format(row.Title,row['PubMed ID']),axis=1)
-    cols=['Creation Date','Authors','Publication','Journal','Citation Count']
+    cols=['PubMed ID', 'Creation Date','Authors','Publication','Journal','MeSH Terms', 'Citation Count']
     layout= html.Div([
                 dcc.Interval(
                     id='interval-component',
@@ -110,41 +112,61 @@ def build_pubs_dash():
 
                                 }
                             ),
-                            dcc.Graph(id='publications',figure=fig), 
-                            html.Div(id='my-output'),
-                            dash_table.DataTable(df1.sort_values('Creation Date',ascending=False).to_dict('records'), 
-                                    [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
-                                    style_cell={
-                                        'height': 'auto',
-                                        # all three widths are needed
-                                        'minWidth': '10px', 'width': '10px', 'maxWidth': '250px',
-                                        'whiteSpace': 'normal',
-                                        'textAlign': 'left'
-                                    },
-                                    sort_action='native',
-                                    page_current=0,
-                                    page_size=10,
-                                    page_action='native',
-                                    filter_action='native',
-                                    style_data={
-                                        'color': 'black',
-                                        'backgroundColor': 'white',
-                                        'font-family': 'Saira Extra Condensed'
-                                    },
-                                    style_filter=[
-                                        {
-                                            'color': 'black',
-                                            'backgroundColor': '#20425A',
-                                            'font-family': 'Saira Extra Condensed'
-                                        }
-                                    ],
-                                    style_header={
-                                        'font-family': 'Saira Extra Condensed',
-                                        'background-color': '#20425A',
-                                        'color': 'white',
-                                        'fontWeight': 'bold'
-                                    }
+                            
+                            html.Div(children=
+                            [
+                                dbc.Row(
+                                    [
+                                        dbc.Col(html.Div(id='bar-container'), width = 6),
+                                        dbc.Col(html.Div(id='line-container'), width = 6)
+                                    ]
                                 )
+                            ]),
+                            
+                            # dcc.Graph(id='publications',figure=fig), 
+                            html.Div(id='my-output'),
+                            dash_table.DataTable(
+                                id='datatable-interactivity',
+                                data = df1.sort_values('Creation Date',ascending=False).to_dict('records'), 
+                                columns = [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
+                                style_cell={
+                                    'height': 'auto',
+                                    # all three widths are needed
+                                    'minWidth': '10px', 'width': '10px', 'maxWidth': '250px',
+                                    'whiteSpace': 'normal',
+                                    'textAlign': 'left'
+                                },
+                                sort_action='native',
+                                
+                                page_current=0,
+                                page_size=10,
+                                page_action='native',
+                                filter_action='native',
+
+                                sort_mode="single",         # sort across 'multi' or 'single' columns
+                                column_selectable="multi",  # allow users to select 'multi' or 'single' columns
+                                selected_columns=[],        # ids of columns that user selects
+                                selected_rows=[],           # indices of rows that user selects
+
+                                style_data={
+                                    'color': 'black',
+                                    'backgroundColor': 'white',
+                                    'font-family': 'Saira Extra Condensed'
+                                },
+                                style_filter=[
+                                    {
+                                        'color': 'black',
+                                        'backgroundColor': '#20425A',
+                                        'font-family': 'Saira Extra Condensed'
+                                    }
+                                ],
+                                style_header={
+                                    'font-family': 'Saira Extra Condensed',
+                                    'background-color': '#20425A',
+                                    'color': 'white',
+                                    'fontWeight': 'bold'
+                                }
+                            )
                             
                     ], style={'padding-top': '0px', 'overflow-y': 'hidden'}
                 )
