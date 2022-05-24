@@ -1,6 +1,7 @@
 import dash
 import ast
 from dash import dcc, html, dash_table
+import dash_bootstrap_components as dbc
 from api_miners import key_vault, pubmed
 import plotly.express as px
 import pandas as pd 
@@ -40,24 +41,24 @@ def build_education_dash():
         else:
             recent_views=int(df.viewCount[0])-int(df.viewCount[1])
         videos.append({'id':item['id'],
-                    'title':item['title'],
-                    'duration':convert_time(item['duration']),
-                    'pubDate':pd.to_datetime(item['publishedAt']),
-                    'totalViews':total_views,
-                    'recentViews':recent_views,
+                    'Title':item['title'],
+                    'Duration':convert_time(item['duration']),
+                    'Date Published':pd.to_datetime(item['publishedAt']),
+                    'Total Views':total_views,
+                    'Recent Views':recent_views,
                     'channelTitle':item['channelTitle']}
                     )
     df=pd.DataFrame(videos)
     import plotly.express as px
     df=df[df.channelTitle.str.startswith('OHDSI')].copy(deep=True)
-    df['yr']=df['pubDate'].dt.year
+    df['yr']=df['Date Published'].dt.year
 
 
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
     fig = make_subplots(rows=1, cols=2,
                         subplot_titles=("Youtube Hours Created","Cumulative Hrs Watched"))
-    df4=df.groupby('yr').duration.sum().reset_index()
+    df4=df.groupby('yr').Duration.sum().reset_index()
     df4.columns=['Year','SumSeconds']
     df4['Hrs Created']=df4['SumSeconds'].dt.days*24+df4['SumSeconds'].dt.seconds/3600
     fig.add_trace(
@@ -66,7 +67,7 @@ def build_education_dash():
         y=df4['Hrs Created']),
         row=1, col=1
         )
-    df['hrsWatched']=(df.duration.dt.days*24+df.duration.dt.seconds/3600)*df.totalViews
+    df['hrsWatched']=(df.Duration.dt.days*24+df.Duration.dt.seconds/3600)*df['Total Views']
     df4=df.groupby('yr').hrsWatched.sum().reset_index()
     df4.columns=['Year','HrsWatched']
     df4['Cumulative Hrs Watched']=df4['HrsWatched'].cumsum()
@@ -76,16 +77,46 @@ def build_education_dash():
         y=df4['Cumulative Hrs Watched']),
         row=1, col=2
         )
-    df['pubDate']=df.pubDate.dt.strftime('%Y-%m-%d')
-    df['title']=df.apply(lambda row:"[{}](https://www.youtube.com/watch?v={})".format(row.title,row.id),axis=1)
+    df['Date Published']=df['Date Published'].dt.strftime('%Y-%m-%d')
+    df['Title']=df.apply(lambda row:"[{}](https://www.youtube.com/watch?v={})".format(row.Title,row.id),axis=1)
     fig.update_layout( title_text="Youtube Video Analysis", showlegend=False)
-    cols=['title','pubDate','duration','totalViews','recentViews']
-    layout=html.Div(
-        children=[
-                dcc.Graph(id='videos',figure=fig), 
-                html.Div(),
-                dash_table.DataTable(df.sort_values('pubDate',ascending=False).to_dict('records'), 
-                        [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
+    cols=['Title','Date Published','Duration','Total Views','Recent Views']
+    layout=html.Div([
+                dcc.Interval(
+                    id='interval-component',
+                    interval=1*1000 # in milliseconds
+                ),
+                html.Div(
+                    children=[
+                    html.Br(),
+                    html.Br(),
+                    html.Br(),
+                    html.H1("YouTube Analysis", 
+                        style={
+                            'font-family': 'Saira Extra Condensed',
+                            'color': '#20425A',
+                            'fontWeight': 'bold',
+                            'text-align': 'center'
+
+                        }
+                    ),
+                    
+                    html.Div(children=
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(html.Div(id='bar-container'), width = 6),
+                                dbc.Col(html.Div(id='line-container'), width = 6)
+                            ]
+                        )
+                    ]),
+
+                    # dcc.Graph(id='videos',figure=fig), 
+                    html.Div(),
+                    dash_table.DataTable(
+                        id = 'datatable-interactivity',
+                        data = df.sort_values('Date Published',ascending=False).to_dict('records'), 
+                        columns = [{"name": i, "id": i,'presentation':'markdown'} for i in cols],
                         style_cell={
                             'height': 'auto',
                             # all three widths are needed
@@ -94,11 +125,38 @@ def build_education_dash():
                             'textAlign': 'left'
                         },
                         sort_action='native',
+                        
                         page_current=0,
                         page_size=20,
                         page_action='native',
-                        filter_action='native'
-                     )
-        ]
-    )
+                        filter_action='native',
+
+                        sort_mode="single",         # sort across 'multi' or 'single' columns
+                        column_selectable="multi",  # allow users to select 'multi' or 'single' columns
+                        selected_columns=[],        # ids of columns that user selects
+                        selected_rows=[],           # indices of rows that user selects
+
+                        style_data={
+                            'color': 'black',
+                            'backgroundColor': 'white',
+                            'font-family': 'Saira Extra Condensed'
+                        },
+                        style_filter=[
+                            {
+                                'color': 'black',
+                                'backgroundColor': '#20425A',
+                                'font-family': 'Saira Extra Condensed'
+                            }
+                        ],
+                        style_header={
+                            'font-family': 'Saira Extra Condensed',
+                            'background-color': '#20425A',
+                            'color': 'white',
+                            'fontWeight': 'bold'
+                        }
+                    )
+                            
+                    ]
+                )
+            ])
     return layout

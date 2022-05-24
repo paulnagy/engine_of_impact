@@ -21,7 +21,7 @@ from ms_identity_web.configuration import AADConfig
 from api_miners import key_vault, youtube, pubmed
 from api_miners.pubmed import *
 from views import pubs, education
-
+from dash.dash_table.Format import Format, Group
 #App Configurations
 app = Flask(__name__)
 Session(app) # init the serverside session for the app: this is requireddue to large cookie size
@@ -67,7 +67,7 @@ external_stylesheets = [dbc.themes.BOOTSTRAP]
 pubmedDashApp = dash.Dash(__name__, server=app, url_base_pathname='/pub_dashboard/', external_stylesheets=external_stylesheets)
 pubmedDashApp.layout= pubs.build_pubs_dash
 
-youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/education_dashboard/', external_stylesheets=external_stylesheets)
+youtubeDashApp = dash.Dash(__name__, server=app, url_base_pathname='/educ_dashboard/', external_stylesheets=external_stylesheets)
 youtubeDashApp.layout= education.build_education_dash
 
 
@@ -86,56 +86,9 @@ def dashboard():
     # return jsonify({'htmlresponse': render_template('publication_dashboard.html', dashHtml = pubmedDashApp)})
 
 
-
 @app.route('/pub_dashboard', methods = ['POST', 'GET'])
 def dash_app_pub():
     return pubmedDashApp.index()
-
-
-@pubmedDashApp.callback(
-    Output('container-button-basic', 'children'),
-    Input('input-on-submit', 'value')
-)
-def update_output(value):
-    if(value != ""):
-        searchArticles = value
-        designatedContainer = "pubmed"
-        numNewArticles = 0
-        containerArticles = getExistingIDandSearchStr(key_dict, designatedContainer)
-        secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
-        articleTable = getPMArticles(searchArticles)
-        articleTable = articleTable[articleTable['pubYear'] > 2010]
-        
-        try:
-            specifiedArticle = articleTable['pubmedID'][0]
-        except:
-            return jsonify("This article may not be officially available in the system yet. Check back again...")
-        else:
-            specifiedArticle = articleTable['pubmedID'][0]
-            articleTable = articleTable[articleTable.pubmedID.notnull()]
-            articleTable, numNewArticles = identifyNewArticles(articleTable, key_dict)
-
-            if(numNewArticles == 0):
-                if(specifiedArticle in containerArticles[0]):
-                    return jsonify("This article already exists in the '" + str(designatedContainer) + "' container. Please verify." )
-                else:
-                    return jsonify("This article already exists in the other container. Please verify." )
-            else:
-                
-                articleTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = articleTable.apply(lambda x: getGoogleScholarCitation(x, secret_api_key), axis = 1, result_type='expand')
-                articleTable = articleTable.reset_index()
-                if ('index' in articleTable.columns):
-                    del articleTable['index']
-
-                #update the current records
-                # makeCSVJSON(finalTable, key_dict)
-                #update the current records
-                makeCSVJSON(articleTable, key_dict, designatedContainer, False)
-            
-        value = ""
-        return '{} new article(s) added successfully'.format(numNewArticles)
-        # return pubmedDashApp.index()
-        # return dashboard()
 
 
 @pubmedDashApp.callback(
@@ -156,7 +109,8 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
     df2=((dff.groupby('Publication Year')['PubMed ID']).count()).reset_index()
     df2.columns=['Year','Count']
     df3=((dff.groupby('Publication Year')['Citation Count']).sum()).reset_index()
-    df3['cumulative']=df3['Citation Count'].cumsum()
+    df3['cumulative']= round(df3['Citation Count'].cumsum(), 0)
+    
     df3.columns=['Year','citations','Count']
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -180,19 +134,15 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
             y=df3['Count'],
             marker=dict(color = '#f6ac15'),
             hovertemplate =
-                '<i>Citations in %{x}</i>: %{y:.0f}<extra></extra>',
-
+                '<i>Citations in %{x}</i>: %{y} <extra></extra>',
             ),
-            
         secondary_y='Secondary'
     )
 
     # Add figure title
-    fig.update_layout(title_text="<b> OHDSI Publications & Citations</b>", title_x=0.5, showlegend=False)
-
+    fig.update_layout(title_text="<b> OHDSI Publications & Cumulative Citations</b>", title_x=0.5, showlegend=False)
     # Set x-axis title
     fig.update_xaxes(title_text="Year")
-
     # Set y-axes titles
     fig.update_yaxes(
         title_text="Number of Publications", 
@@ -204,32 +154,9 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
     return [
         dcc.Graph(id = 'bar-chart', 
                     figure = fig.update_layout(yaxis={'tickformat': '{:,}'}),
-                    style={'width': '750px', 'padding-left': '50px'},
+                    style={'width': '100%', 'padding-left': '50px'},
                     )
             ]
-    # if "Year" in df2:
-    #     return [
-    #         dcc.Graph(id='bar-chart',
-    #                     style={'width': '550px'},
-    #                     figure=px.bar(
-    #                       data_frame=df2,
-    #                       x="Year",
-    #                       y='Count',
-    #                       title="OHDSI Publications"
-    #                     #   labels={"did online course": "% of Pop took online course"}
-    #                   )
-    #                   .update_layout(showlegend=False, 
-    #                                     xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
-    #                                     xaxis_tickformat = '%Y',
-    #                                     title_x=0.5)
-    #                   .update_traces(hoverinfo= "y", marker=dict(color = '#20425A'))
-                      
-                      
-
-                      
-                      
-    #                   )
-    #     ]
 
 
 @pubmedDashApp.callback(
@@ -253,7 +180,7 @@ def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
     if "Year" in df3:
         return [
             dcc.Graph(id='line-chart',
-                      style={'width': '650px'},
+                      style={'width': '100%'},
                       figure=px.line(
                           data_frame=df3,
                           x="Year",
@@ -269,9 +196,105 @@ def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
         ]
 
 
-@app.route('/education_dashboard', methods = ['POST', 'GET'])
-def education():
+@app.route('/education_dashboard/', methods = ['POST', 'GET'])
+def dashboard_education():
+    return render_template("education_dashboard.html")
+
+
+@app.route('/educ_dashboard', methods = ['POST', 'GET'])
+def dash_app_education():
     return youtubeDashApp.index()
+
+
+@youtubeDashApp.callback(
+    Output(component_id='bar-container', component_property='children'),
+    [Input(component_id='datatable-interactivity', component_property="derived_virtual_data"),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_selected_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='selected_rows'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_indices'),
+     Input(component_id='datatable-interactivity', component_property='derived_virtual_row_ids'),
+     Input(component_id='datatable-interactivity', component_property='active_cell'),
+     Input(component_id='datatable-interactivity', component_property='selected_cells')], prevent_initial_call=True
+)
+def youtubeupdate_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
+               order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
+    df = pd.DataFrame(all_rows_data)
+    df=df[df.channelTitle.str.startswith('OHDSI')].copy(deep=True)
+    # df['yr']=df['Date Published'].dt.year
+    # df['Duration'] = education.convert_time(df['Duration'])
+    df['Duration'] = df.apply(lambda x: x['Duration'][2:], axis = 1)
+    df['Duration'] = df.apply(lambda x: education.convert_time(x['Duration']), axis = 1)
+
+    print(df)
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+    # fig = make_subplots(rows=1, cols=2,
+    #                     subplot_titles=("Youtube Hours Created","Cumulative Hrs Watched"))
+    df4=df.groupby('yr').Duration.sum().reset_index()
+    df4.columns=['Year','SumSeconds']
+    df4['Hrs Created']=df4['SumSeconds'].dt.days*24 + df4['SumSeconds'].dt.seconds/3600
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add traces
+    fig.add_trace(
+        go.Bar(
+            x=df4['Year'],
+            y=df4['Hrs Created'],
+            marker=dict(color = '#20425A'),
+            hovertemplate =
+                '<i>%{x}</i>: %{y:.0f} hours of content created <extra></extra>',
+            showlegend = False
+            
+            ), 
+        secondary_y=False,
+    )
+    # df['hrsWatched']=(df.Duration.dt.days*24+df.Duration.dt.seconds/3600)*df['Total Views']
+    df4=df.groupby('yr').hrsWatched.sum().reset_index()
+    df4.columns=['Year','HrsWatched']
+    df4['Cumulative Hrs Watched']= np.round(df4['HrsWatched'].cumsum(), 0)
+    # df4['Cumulative Hrs Watched'] = df4['Cumulative Hrs Watched'].apply(lambda x :int(x))
+    # df4['Cumulative Hrs Watched'] = df4['Cumulative Hrs Watched'].apply(lambda x : "{:,}".format(x))
+    fig.add_trace(
+        go.Line(
+            x=df4['Year'],
+            y=df4['Cumulative Hrs Watched'],
+            marker=dict(color = '#f6ac15'),
+            hovertemplate =
+                '<i>%{x}</i>: %{y} hours of video watched <extra></extra>'
+
+            ),
+            
+        secondary_y='Secondary'
+    )
+
+    # Add figure title
+    fig.update_layout(title_text="<b> YouTube Analysis </b>", title_x=0.5, showlegend=False)
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Year")
+
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text="Content Hours Created", 
+        secondary_y=False)
+    fig.update_yaxes(
+        title_text="Cumulative Hours Watched", 
+        secondary_y=True)
+
+    return [
+        dcc.Graph(id = 'bar-chart', 
+                    figure = fig.update_layout(yaxis={'tickformat': '{:,}'}),
+                    style={'width': '100%', 'padding-left': '50px'},
+                    )
+            ]
+
+
+
+
+
+#authentications
 
 
 @app.route('/token_details')
@@ -299,6 +322,10 @@ def login():
         return jsonify(message = "True")
     else:
         return jsonify(message = 'Login unsuccessful. Bad email or password'), 401
+
+
+#API Calls to CosmosDB
+
 
 @app.route('/articleManager')
 def articleManager():

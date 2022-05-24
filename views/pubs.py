@@ -9,10 +9,18 @@ import pandas as pd
 
 def build_pubs_dash():
     container_name='pubmed'
+    container_for_author_data='pubmed_test'
     key_dict = key_vault.get_key_dict()
     container=pubmed.init_cosmos(key_dict, container_name)
+    container_author_data=pubmed.init_cosmos(key_dict, container_for_author_data)
+
+
     query = "SELECT * FROM c"
     items = list(container.query_items(
+        query=query,
+        enable_cross_partition_query=True
+    ))
+    author_items = list(container_author_data.query_items(
         query=query,
         enable_cross_partition_query=True
     ))
@@ -33,6 +41,10 @@ def build_pubs_dash():
                     'MeSH Terms':item['data']['meshT']})
     df1=pd.DataFrame(data)   
 
+    author_data = []
+    for item in author_items:
+        author_data.append(item[item['id']])
+    # print(author_data)
     #parse authors to set a limit on authors shown n_authors
     df1['authors']=""
     n_authors=3
@@ -69,23 +81,23 @@ def build_pubs_dash():
         
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
-    fig = make_subplots(rows=1, cols=2,
-                        subplot_titles=("<b> Publications </b>","<b> Cumulative Citations </b>"))
-    fig.add_trace(
-        go.Bar(
-        x=df2['Year'],
-        y=df2['Count'],
-        marker=dict(color = '#20425A')),
-        row=1, col=1
-        )
-    fig.add_trace(
-        go.Line(
-        x=df3['Year'],
-        y=df3['Count'],
-        marker=dict(color = '#20425A')),
-        row=1, col=2
-        )
-    fig.update_layout(showlegend=False, font_family="Saira Extra Condensed")
+    # fig = make_subplots(rows=1, cols=2,
+    #                     subplot_titles=("<b> Publications </b>","<b> Cumulative Citations </b>"))
+    # fig.add_trace(
+    #     go.Bar(
+    #     x=df2['Year'],
+    #     y=df2['Count'],
+    #     marker=dict(color = '#20425A')),
+    #     row=1, col=1
+    #     )
+    # fig.add_trace(
+    #     go.Line(
+    #     x=df3['Year'],
+    #     y=df3['Count'],
+    #     marker=dict(color = '#20425A')),
+    #     row=1, col=2
+    #     )
+    # fig.update_layout(showlegend=False, font_family="Saira Extra Condensed")
     df1['Publication']=df1.apply(lambda row:"[{}](http://pubmed.gov/{})".format(row.Title,row['PubMed ID']),axis=1)
     cols=['PubMed ID', 'Creation Date','Authors','Publication','Journal','MeSH Terms', 'Citation Count']
     layout= html.Div([
@@ -123,6 +135,7 @@ def build_pubs_dash():
                                 )
                             ]),
                             
+                            
                             # dcc.Graph(id='publications',figure=fig), 
                             html.Div(id='my-output'),
                             dash_table.DataTable(
@@ -139,7 +152,7 @@ def build_pubs_dash():
                                 sort_action='native',
                                 
                                 page_current=0,
-                                page_size=10,
+                                page_size=20,
                                 page_action='native',
                                 filter_action='native',
 
