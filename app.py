@@ -1,24 +1,25 @@
-from distutils.log import error
-from api_miners import key_vault, youtube, pubmed
-from api_miners.pubmed import *
-from azure.cosmos import CosmosClient, PartitionKey
+import datetime as date  
+import pandas as pd 
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import dash
 from dash import Dash, dcc, html, Input, Output, State
-import datetime as date   
-from googleapiclient.discovery import build
 from flask import Flask
 from flask_session import Session
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
 from functools import wraps
+from distutils.log import error
+
+from azure.cosmos import CosmosClient, PartitionKey
+from googleapiclient.discovery import build
 import logging
 from ms_identity_web import IdentityWebPython
 from ms_identity_web.adapters import FlaskContextAdapter
 from ms_identity_web.configuration import AADConfig
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import pandas as pd 
-#dashapp layouts
+
+from api_miners import key_vault, youtube, pubmed
+from api_miners.pubmed import *
 from views import pubs, education
 
 #App Configurations
