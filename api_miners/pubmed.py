@@ -955,12 +955,12 @@ def main():
         
         if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
             result = authorSummary(key_dict, 'pubmed')
-            pushAuthorSummary(result, key_dict, 'pubmed_test')
+            pushAuthorSummary(result, key_dict, 'pubmed_author')
         if(numNewArticles > 0):
-            currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_test')
+            currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_author')
             asOfThisYear = pd.DataFrame(currentAuthorSummaryTable.iloc[10]).T
             checkAuthorRecord(finalTable, asOfThisYear)
-            pushAuthorSummary(currentAuthorSummaryTable, key_dict, 'pubmed_test')
+            pushAuthorSummary(currentAuthorSummaryTable, key_dict, 'pubmed_author')
 
         print("Update complete.")
     else:
