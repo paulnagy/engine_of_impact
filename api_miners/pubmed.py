@@ -786,11 +786,10 @@ def findUniqueFirstAuthors(multipleAuthors: bool, placeHolder, articleAuthors):
     placeHolder = sorted(placeHolder)
     return placeHolder
 
-def authorSummary(key_dict:dict, containerName):
-    df = retrieveAsTable(key_dict, True, containerName)
-    df['firstAuthor'] = df.apply(lambda x: x['firstAuthor'].replace("'", ""), axis = 1)
-    authorDf = df.groupby(['pubYear'])['fullAuthor'].apply(', '.join).reset_index()
-    firstAuthorDf = df.groupby(['pubYear'])['firstAuthor'].apply(', '.join).reset_index()
+def authorSummary(authorDf):
+    authorDf['firstAuthor'] = authorDf.apply(lambda x: x['firstAuthor'].replace("'", ""), axis = 1)
+    authorDf = authorDf.groupby(['pubYear'])['fullAuthor'].apply(', '.join).reset_index()
+    firstAuthorDf = authorDf.groupby(['pubYear'])['firstAuthor'].apply(', '.join).reset_index()
     #full authors
     placeHolder = []
     authorDf['cleanFullAuthors'] = authorDf.apply(lambda x: x['fullAuthor'].replace("[", ""), axis = 1)
@@ -954,7 +953,8 @@ def main():
         makeCSVJSON(finalTable, key_dict)
         
         if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
-            result = authorSummary(key_dict, 'pubmed')
+            currentSummary = retrieveAsTable(key_dict, True, 'pubmed')
+            result = authorSummary(currentSummary)
             pushAuthorSummary(result, key_dict, 'pubmed_author')
         if(numNewArticles > 0):
             currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_author')

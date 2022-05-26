@@ -9,7 +9,7 @@ import pandas as pd
 
 def build_pubs_dash():
     container_name='pubmed'
-    container_for_author_data='pubmed_test'
+    container_for_author_data='pubmed_author'
     key_dict = key_vault.get_key_dict()
     container=pubmed.init_cosmos(key_dict, container_name)
     container_author_data=pubmed.init_cosmos(key_dict, container_for_author_data)
@@ -34,6 +34,7 @@ def build_pubs_dash():
         data.append({'PubMed ID':item['data']['pubmedID'],
                     'Creation Date':item['data']['creationDate'],
                     'Citation Count':citation_count,
+                    'First Authors':item['data']['firstAuthor'],
                     'Authors':item['data']['fullAuthor'],
                     'Title':item['data']['title'],
                     'Journal':item['data']['journalTitle'],
@@ -41,10 +42,16 @@ def build_pubs_dash():
                     'MeSH Terms':item['data']['meshT']})
     df1=pd.DataFrame(data)   
 
-    # author_data = []
+    # authorData=[]
     # for item in author_items:
-    #     author_data.append(item[item['id']])
-    # print(author_data)
+    #     authorData.append({'Year':item['authorSummary']['pubYear'],
+    #                 'First Author Names':item['authorSummary']['uniqueFirstAuthors'],
+    #                 'New First Authors':item['authorSummary']['numberNewFirstAuthors'],
+    #                 'Total First Authors':item['authorSummary']['cumulativeFirstAuthors'],
+    #                 "New Authors' Names":item['authorSummary']['uniqueAuthors'],
+    #                 'All New Authors':item['authorSummary']['numberNewAuthors'],
+    #                 'Total Authors':item['authorSummary']['cumulativeAuthors']})
+
     #parse authors to set a limit on authors shown n_authors
     df1['authors']=""
     n_authors=3

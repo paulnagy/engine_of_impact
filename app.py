@@ -170,30 +170,58 @@ def update_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
      Input(component_id='datatable-interactivity', component_property='active_cell'),
      Input(component_id='datatable-interactivity', component_property='selected_cells')], prevent_initial_call=True
 )
-def update_line(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
+def update_author_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
                order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
 
-    dff = pd.DataFrame(all_rows_data)
-    df3=dff.groupby('Publication Year')['Citation Count'].sum().reset_index()
-    df3['cumulative']=df3['Citation Count'].cumsum()
-    df3.columns=['Year','citations','Count']
-    if "Year" in df3:
-        return [
-            dcc.Graph(id='line-chart',
-                      style={'width': '100%'},
-                      figure=px.line(
-                          data_frame=df3,
-                          x="Year",
-                          y='Count',
-                          title="OHDSI Cumulative Citations"
-                        #   labels={"did online course": "% of Pop took online course"}
-                      ).update_layout(showlegend=False, 
-                                        xaxis={'categoryorder': 'total ascending', 'tickformat': ',d'},
-                                        xaxis_tickformat = '%Y',
-                                        title_x=0.5)
-                      .update_traces(hoverinfo= "y", line=dict(color = '#20425A'))
-                      )
-        ]
+    currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_author')
+    currentAuthorSummaryTable = currentAuthorSummaryTable[['pubYear', 'numberNewFirstAuthors', 'cumulativeFirstAuthors', 'numberNewAuthors', 'cumulativeAuthors']]
+    currentAuthorSummaryTable.columns = ['Year', 'New First Authors', 'Total First Authors', 'All New Authors', 'Total Authors']
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add traces
+    fig.add_trace(
+        go.Bar(
+            x=currentAuthorSummaryTable['Year'],
+            y=currentAuthorSummaryTable['All New Authors'],
+            marker=dict(color = '#20425A'),
+            hovertemplate =
+                '<i>New Authors in %{x}</i>: %{y:.0f}<extra></extra>',
+            showlegend = False
+            
+            ), 
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Line(
+            x=currentAuthorSummaryTable['Year'],
+            y=currentAuthorSummaryTable['Total Authors'],
+            marker=dict(color = '#f6ac15'),
+            hovertemplate =
+                '<i>Cumulative Authors by %{x}</i>: %{y} <extra></extra>',
+            ),
+        secondary_y='Secondary'
+    )
+
+    # Add figure title
+    fig.update_layout(title_text="<b> OHDSI Researchers</b>", title_x=0.5, showlegend=False)
+    # Set x-axis title
+    fig.update_xaxes(title_text="Year")
+    # Set y-axes titles
+    fig.update_yaxes(
+        title_text="Number of New Authors", 
+        secondary_y=False)
+    fig.update_yaxes(
+        title_text="Number of Cumulative Authors", 
+        secondary_y=True)
+
+    return [
+        dcc.Graph(id = 'bar-chart', 
+                    figure = fig.update_layout(yaxis={'tickformat': '{:,}'}),
+                    style={'width': '100%', 'padding-left': '50px'},
+                    )
+            ]
 
 
 @app.route('/education_dashboard/', methods = ['POST', 'GET'])
