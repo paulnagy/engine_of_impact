@@ -226,7 +226,6 @@ def youtubeupdate_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_r
     df['Duration'] = df.apply(lambda x: x['Duration'][2:], axis = 1)
     df['Duration'] = df.apply(lambda x: education.convert_time(x['Duration']), axis = 1)
 
-    print(df)
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
     # fig = make_subplots(rows=1, cols=2,

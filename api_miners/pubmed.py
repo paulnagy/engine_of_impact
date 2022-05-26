@@ -5,7 +5,6 @@ from oauth2client.tools import argparser
 # import key_vault as kv
 from api_miners import key_vault as kv
 
-
 from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec%3Aentrez-specialized-parsers
 import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
 import time
@@ -486,7 +485,6 @@ def makeCSVJSON(table, key_dict: dict, containerChosen: str, forUpdate: bool):
     else: 
         data = defaultdict(list)
     d_timeseries = defaultdict(list)
-    
     #format table into dictionary
     for row in range(len(table['pubmedID'])):
         d_trackingChanges = {}
@@ -702,6 +700,213 @@ def includeMissingCurrentArticles(table, key_dict: dict):
             
     return outputTable
 
+def findUniqueAuthors(multipleAuthors: bool, placeHolder, articleAuthors):
+#     container = init_cosmos(key_dict, containerName)
+#     placeHolder = []
+#     placeHolderMatch = []
+    indexStart = 1
+    indexFQ = 0
+    indexC = 0
+    indexSQ = 0
+    i = 0
+    while i < len(articleAuthors)-1:
+        if((articleAuthors[i] == "'") & (articleAuthors[i+1] == ",")):
+            indexFQ = i
+            indexC = i + 1
+            indexSQ = i + 3
+            author = articleAuthors[indexStart:indexFQ]
+#                 author = author.replace(",", "")
+            author = author.replace("\"", "")
+            if(author[0] == " "):
+                author = author[1:-1]
+#             if((author in placeHolder) == False):
+#                 if(((fuzz.token_set_ratio(author, placeHolder)) >= 80) &\
+#                   ((fuzz.token_set_ratio(author, placeHolder)) < 90)):
+#                     placeHolderMatch.append(author)
+#             if((fuzz.token_set_ratio(author, placeHolder)) < 80):
+            if(len(placeHolder) > 0):
+                highestOne = process.extractOne(author, placeHolder)
+                if(highestOne[1] < 95):
+                    if((fuzz.token_set_ratio(author, highestOne[0])) < 95):
+                        if((author != "") & (author != ', ')):
+                            author = re.sub(',|"', '', author)
+                            author = re.sub("'", '', author)
+                            if((author[0] == " ") | (author[0] == "'")):
+                                author = author[1:-1]
+                            placeHolder.append(author)
+                indexStart = indexSQ + 1
+                i = indexSQ + 1
+            else:
+                placeHolder.append(author)
+                indexStart = indexSQ + 1
+                i = indexSQ + 1
+        else:
+            i += 1
+    placeHolder = sorted(placeHolder)
+    return placeHolder
+
+def findUniqueFirstAuthors(multipleAuthors: bool, placeHolder, articleAuthors):
+    indexStartQ = 1
+    indexEndQ = 0
+    indexC = 0
+    indexStart = 0
+    i = 0
+    while i < len(articleAuthors)-1:
+        if(articleAuthors[i] == ","):
+            indexEndQ = i-1
+            indexC = i
+            indexStartQ = i + 1
+            author = articleAuthors[indexStart:indexEndQ]
+#                 author = author.replace(",", "")
+            if(author[0] == " "):
+                author = author[1:-1]
+#             if((author in placeHolder) == False):
+#                 if(((fuzz.token_set_ratio(author, placeHolder)) >= 80) &\
+#                   ((fuzz.token_set_ratio(author, placeHolder)) < 90)):
+#                     placeHolderMatch.append(author)
+#             if((fuzz.token_set_ratio(author, placeHolder)) < 80):
+            if(len(placeHolder) > 0):
+                highestOne = process.extractOne(author, placeHolder)
+                if(highestOne[1] < 95):
+                    if((fuzz.token_set_ratio(author, highestOne[0])) < 95):
+                        if((author != "") & (author != ', ')):
+                            author = re.sub(',|"', '', author)
+                            author = re.sub("'", '', author)
+                            if((author[0] == " ") | (author[0] == "'")):
+                                author = author[1:-1]
+                            placeHolder.append(author)
+                indexStart = indexStartQ
+                i = indexStartQ + 1
+            else:
+                placeHolder.append(author)
+                indexStart = indexStartQ + 1
+                i = indexStartQ + 1
+        else:
+            i += 1
+    placeHolder = sorted(placeHolder)
+    return placeHolder
+
+def authorSummary(key_dict:dict, containerName):
+    df = retrieveAsTable(key_dict, True, containerName)
+    df['firstAuthor'] = df.apply(lambda x: x['firstAuthor'].replace("'", ""), axis = 1)
+    authorDf = df.groupby(['pubYear'])['fullAuthor'].apply(', '.join).reset_index()
+    firstAuthorDf = df.groupby(['pubYear'])['firstAuthor'].apply(', '.join).reset_index()
+    #full authors
+    placeHolder = []
+    authorDf['cleanFullAuthors'] = authorDf.apply(lambda x: x['fullAuthor'].replace("[", ""), axis = 1)
+    authorDf['cleanFullAuthors'] = authorDf.apply(lambda x: x['cleanFullAuthors'].replace("]", ""), axis = 1)
+    authorDf['cleanFullAuthors'] = authorDf.apply(lambda x: re.sub('([A-Za-z])(,)', '\\1', x['cleanFullAuthors']), axis = 1)
+    authorDf['uniqueAuthors'] = authorDf.apply(lambda x: findUniqueAuthors(True, placeHolder, x['cleanFullAuthors']), axis = 1)
+    authorDf['numberNewAuthors'] = len(authorDf['uniqueAuthors'][0])
+    authorDf['cumulativeAuthors'] = len(authorDf['uniqueAuthors'][0])
+    for i in range(1,authorDf.shape[0]):
+        numberNewAuthors = len(list(set(authorDf['uniqueAuthors'][i]) - set(authorDf['uniqueAuthors'][i-1])))
+        authorDf['numberNewAuthors'][i] = numberNewAuthors
+        authorDf['cumulativeAuthors'][i] = numberNewAuthors + authorDf['cumulativeAuthors'][i-1]
+        
+    #first authors
+    faPlaceHolder = []
+    firstAuthorDf['uniqueFirstAuthors'] = firstAuthorDf.apply(lambda x: findUniqueFirstAuthors(True, faPlaceHolder, x['firstAuthor']), axis = 1)
+    firstAuthorDf['numberNewFirstAuthors'] = len(firstAuthorDf['uniqueFirstAuthors'][0])
+    firstAuthorDf['cumulativeFirstAuthors'] = len(firstAuthorDf['uniqueFirstAuthors'][0])
+    for i in range(1,firstAuthorDf.shape[0]):
+        numberNewAuthors = len(list(set(firstAuthorDf['uniqueFirstAuthors'][i]) - set(firstAuthorDf['uniqueFirstAuthors'][i-1])))
+        firstAuthorDf['numberNewFirstAuthors'][i] = numberNewAuthors
+        firstAuthorDf['cumulativeFirstAuthors'][i] = numberNewAuthors + firstAuthorDf['cumulativeFirstAuthors'][i-1]
+    
+    #merge
+    finalAuthorDf = pd.concat([firstAuthorDf,\
+                authorDf[['fullAuthor', 'cleanFullAuthors', 'uniqueAuthors', 'numberNewAuthors', 'cumulativeAuthors']]], axis=1)
+    
+    return(finalAuthorDf)
+
+def pushAuthorSummary(authorSummaryTable, key_dict:dict, containerName):
+    d_timeseries = defaultdict(list)    
+    #format table into dictionary
+    for row in range(0,len(authorSummaryTable['pubYear'])):
+        d_authorInfo = {}
+        for k in authorSummaryTable.columns:  
+            if (k in ['pubYear', 'numberNewFirstAuthors', 'cumulativeFirstAuthors',
+                      'numberNewAuthors', 'cumulativeAuthors']):
+                d_authorInfo[k] = int(authorSummaryTable[k][row])
+            elif( k in ['uniqueFirstAuthors', 'uniqueAuthors']):
+                d_authorInfo[k] = list(authorSummaryTable[k][row])
+            elif( k in ['firstAuthor', 'fullAuthor', 'cleanFullAuthors']):
+                d_authorInfo[k] = str(authorSummaryTable[k][row])
+
+        yr = authorSummaryTable['pubYear'][row]
+        d_timeseries[str(yr)].append(d_authorInfo) 
+
+    d_timeseries = dict(d_timeseries)
+    container = init_cosmos(key_dict, containerName)
+    for k, v in d_timeseries.items(): 
+        container.upsert_item({
+                'id': k,
+                'authorSummary': v
+            }
+        )
+
+        
+        
+def retrieveAuthorSummaryTable(key_dict: dict, containerName):
+    """
+    Retrieves the data as a dataframe
+    
+    """
+    container = init_cosmos(key_dict, containerName)
+    pubYear, firstAuthor, uniqueFirstAuthors, numberNewFirstAuthors = [],[],[],[]
+    cumulativeFirstAuthors, fullAuthor, cleanFullAuthors= [],[],[]
+    uniqueAuthors, numberNewAuthors, cumulativeAuthors = [],[],[]
+
+    colNames = ['pubYear', 'firstAuthor', 'uniqueFirstAuthors', 'numberNewFirstAuthors',
+               'cumulativeFirstAuthors', 'fullAuthor', 'cleanFullAuthors',
+               'uniqueAuthors', 'numberNewAuthors', 'cumulativeAuthors']
+
+    for item in container.query_items(query = str('SELECT * FROM ' + containerName), enable_cross_partition_query=True):
+
+        pubYear.append(item['authorSummary'][0]['pubYear'])
+        firstAuthor.append(item['authorSummary'][0]['firstAuthor'])
+        uniqueFirstAuthors.append(item['authorSummary'][0]['uniqueFirstAuthors'])
+        numberNewFirstAuthors.append(item['authorSummary'][0]['numberNewFirstAuthors'])
+
+        cumulativeFirstAuthors.append(item['authorSummary'][0]['cumulativeFirstAuthors'])
+        fullAuthor.append(item['authorSummary'][0]['fullAuthor'])
+        cleanFullAuthors.append(item['authorSummary'][0]['cleanFullAuthors'])
+
+        uniqueAuthors.append(item['authorSummary'][0]['uniqueAuthors'])
+        numberNewAuthors.append(item['authorSummary'][0]['numberNewAuthors'])
+        cumulativeAuthors.append(item['authorSummary'][0]['cumulativeAuthors'])
+        
+        df = pd.DataFrame([pubYear, firstAuthor, uniqueFirstAuthors, numberNewFirstAuthors,
+                           cumulativeFirstAuthors, fullAuthor, cleanFullAuthors,
+                          uniqueAuthors, numberNewAuthors, cumulativeAuthors]).T
+        
+        df.columns = colNames
+        
+#         df['datePulled'] = date.datetime.now().strftime("%m-%d-%Y")
+    return df
+
+def checkAuthorRecord(newArticleTable, currentAuthorSummary):
+    for row in range(0,newArticleTable.shape[0]):
+        dfRow = pd.DataFrame(newArticleTable.iloc[row]).T
+        #clean first author 
+        dfRow['firstAuthor'] = dfRow.apply(lambda x: x['firstAuthor'].replace("'", ""), axis = 1)
+        #check full author
+        dfRow['cleanFullAuthors'] = dfRow.apply(lambda x: x['fullAuthor'].replace("[", ""), axis = 1)
+        dfRow['cleanFullAuthors'] = dfRow.apply(lambda x: x['cleanFullAuthors'].replace("]", ""), axis = 1)
+        dfRow['cleanFullAuthors'] = dfRow.apply(lambda x: re.sub('([A-Za-z])(,)', '\\1', x['cleanFullAuthors']), axis = 1)
+        exists = dfRow['firstAuthor'][0] in list(currentAuthorSummary['uniqueFirstAuthors'])[0]
+        if(exists == False):
+            #append
+            authorList = list(currentAuthorSummary['uniqueFirstAuthors'])[0]
+            authorList.append(dfRow['firstAuthor'][0])
+            currentAuthorSummary['uniqueFirstAuthors'][0] = authorList
+
+        #check full authors
+        for item in dfRow['cleanFullAuthors']:
+            if((item in list(currentAuthorSummary['uniqueAuthors'])[0]) == False):
+                list(currentAuthorSummary['uniqueAuthors'])[0].append(item)
+
 # def main():
 #     #initialize the cosmos db dictionary
 #     key_dict = kv.get_key_dict()
@@ -747,6 +952,16 @@ def includeMissingCurrentArticles(table, key_dict: dict):
 
 #         #update the current records
 #         makeCSVJSON(finalTable, key_dict)
+        
+#         if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
+#             result = authorSummary(key_dict, 'pubmed')
+#             pushAuthorSummary(result, key_dict, 'pubmed_test')
+#         if(numNewArticles > 0):
+#             currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_test')
+#             asOfThisYear = pd.DataFrame(currentAuthorSummaryTable.iloc[10]).T
+#             checkAuthorRecord(finalTable, asOfThisYear)
+#             pushAuthorSummary(currentAuthorSummaryTable, key_dict, 'pubmed_test')
+
 #         print("Update complete.")
 #     else:
 #         print("No updates were performed.")

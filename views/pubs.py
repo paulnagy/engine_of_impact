@@ -41,9 +41,9 @@ def build_pubs_dash():
                     'MeSH Terms':item['data']['meshT']})
     df1=pd.DataFrame(data)   
 
-    author_data = []
-    for item in author_items:
-        author_data.append(item[item['id']])
+    # author_data = []
+    # for item in author_items:
+    #     author_data.append(item[item['id']])
     # print(author_data)
     #parse authors to set a limit on authors shown n_authors
     df1['authors']=""

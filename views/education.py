@@ -42,7 +42,8 @@ def build_education_dash():
             recent_views=int(df.viewCount[0])-int(df.viewCount[1])
         videos.append({'id':item['id'],
                     'Title':item['title'],
-                    'Duration':convert_time(item['duration']),
+                    # 'Duration':convert_time(item['duration']),
+                    'Duration':item['duration'],
                     'Date Published':pd.to_datetime(item['publishedAt']),
                     'Total Views':total_views,
                     'Recent Views':recent_views,
@@ -51,8 +52,11 @@ def build_education_dash():
     df=pd.DataFrame(videos)
     import plotly.express as px
     df=df[df.channelTitle.str.startswith('OHDSI')].copy(deep=True)
+    # df['Duration'] = df.apply(lambda x: str(x['Duration'])[2:], axis = 1)
+    df['Duration'] = df.apply(lambda x: convert_time(x['Duration']), axis = 1)
+    print(df['Duration'])
     df['yr']=df['Date Published'].dt.year
-
+    
 
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
@@ -79,8 +83,10 @@ def build_education_dash():
         )
     df['Date Published']=df['Date Published'].dt.strftime('%Y-%m-%d')
     df['Title']=df.apply(lambda row:"[{}](https://www.youtube.com/watch?v={})".format(row.Title,row.id),axis=1)
+    df['Length'] = df.apply(lambda x: str(x['Duration'])[7:], axis = 1)
+
     fig.update_layout( title_text="Youtube Video Analysis", showlegend=False)
-    cols=['Title','Date Published','Duration','Total Views','Recent Views']
+    cols=['Title','Date Published','Length','Total Views','Recent Views']
     layout=html.Div([
                 dcc.Interval(
                     id='interval-component',
