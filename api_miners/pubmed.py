@@ -907,66 +907,64 @@ def checkAuthorRecord(newArticleTable, currentAuthorSummary):
             if((item in list(currentAuthorSummary['uniqueAuthors'])[0]) == False):
                 list(currentAuthorSummary['uniqueAuthors'])[0].append(item)
 
-# def main():
-#     #initialize the cosmos db dictionary
-#     key_dict = kv.get_key_dict()
-#     dateMY = "" + date.datetime.now().strftime("%m-%d-%Y")[0:2] + date.datetime.now().strftime("%m-%d-%Y")[5:10]
-#     secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
+def main():
+    #initialize the cosmos db dictionary
+    key_dict = kv.get_key_dict()
+    dateMY = "" + date.datetime.now().strftime("%m-%d-%Y")[0:2] + date.datetime.now().strftime("%m-%d-%Y")[5:10]
+    secret_api_key = key_dict['SERPAPI_KEY'] #SERPAPI key
     
-#     #search terms/strings
-#     searchAll = ['ohdsi', 'omop', 'Observational Medical Outcomes Partnership Common Data Model', \
-#              '"Observational Medical Outcomes Partnership"', '"Observational Health Data Sciences and Informatics"']  
-#     # searchAll = addTheseArticles   #27 without relevent key words in the title/abstract/author
+    #search terms/strings
+    searchAll = ['ohdsi', 'omop', 'Observational Medical Outcomes Partnership Common Data Model', \
+             '"Observational Medical Outcomes Partnership"', '"Observational Health Data Sciences and Informatics"']  
+    # searchAll = addTheseArticles   #27 without relevent key words in the title/abstract/author
     
-#     #first search pubmed
-#     finalTable = getPMArticles(searchAll)
-#     finalTable = includeMissingCurrentArticles(finalTable, key_dict)
-#     finalTable = finalTable[finalTable['pubYear'] > 2010]
-#     numNewArticles = 0
-#     #check if an update has already been performed this month
-#     if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] == dateMY):
-#         print("Already updated this month on " + getTimeOfLastUpdate(key_dict))
-#         print("Identifying new articles...")
-#         #check if an update has already been performed today
-#         if(getTimeOfLastUpdate(key_dict) != str("" + date.datetime.now().strftime("%m-%d-%Y"))):
-#             #if not search and filter for new articles
-#             finalTable, numNewArticles = identifyNewArticles(finalTable, key_dict)
-#             #if no new articles are found. End the update/script.
-#             if(numNewArticles == 0):
-#                 print("" + str(numNewArticles) + " new articles found. Update is not needed." )
-#             else:
-#                 print("" + str(numNewArticles) + " new articles found. Proceed to update..." )
-#         else:
-#             print("Already checked for new articles today. Come back later:)")
-#     else:
-#         print("First update of the month.")
+    #first search pubmed
+    finalTable = getPMArticles(searchAll)
+    finalTable = includeMissingCurrentArticles(finalTable, key_dict)
+    finalTable = finalTable[finalTable['pubYear'] > 2010]
+    numNewArticles = 0
+    #check if an update has already been performed this month
+    if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] == dateMY):
+        print("Already updated this month on " + getTimeOfLastUpdate(key_dict))
+        print("Identifying new articles...")
+        #check if an update has already been performed today
+        if(getTimeOfLastUpdate(key_dict) != str("" + date.datetime.now().strftime("%m-%d-%Y"))):
+            #if not search and filter for new articles
+            finalTable, numNewArticles = identifyNewArticles(finalTable, key_dict)
+            #if no new articles are found. End the update/script.
+            if(numNewArticles == 0):
+                print("" + str(numNewArticles) + " new articles found. Update is not needed." )
+            else:
+                print("" + str(numNewArticles) + " new articles found. Proceed to update..." )
+        else:
+            print("Already checked for new articles today. Come back later:)")
+    else:
+        print("First update of the month.")
 
-#     #if it is the first update of the month, or if new articles have been found within the same month, upsert those articles
-#     if((getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY) or (numNewArticles > 0)):
-#         #search google scholar and create 4 new columns
-#         finalTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = finalTable.apply(lambda x: getGoogleScholarCitation(x, key_dict['SERPAPI_KEY']), axis = 1, result_type='expand')
-#         finalTable = finalTable.reset_index()
-#         if ('index' in finalTable.columns):
-#             del finalTable['index']
-#             del finalTable['level_0']
+    #if it is the first update of the month, or if new articles have been found within the same month, upsert those articles
+    if((getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY) or (numNewArticles > 0)):
+        #search google scholar and create 4 new columns
+        finalTable[['foundInGooScholar', 'numCitations', 'levenProb', 'fullAuthorGooScholar', 'googleScholarLink']] = finalTable.apply(lambda x: getGoogleScholarCitation(x, key_dict['SERPAPI_KEY']), axis = 1, result_type='expand')
+        finalTable = finalTable.reset_index()
+        if ('index' in finalTable.columns):
+            del finalTable['index']
+            del finalTable['level_0']
 
-#         #update the current records
-#         makeCSVJSON(finalTable, key_dict)
+        #update the current records
+        makeCSVJSON(finalTable, key_dict)
         
-#         if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
-#             result = authorSummary(key_dict, 'pubmed')
-#             pushAuthorSummary(result, key_dict, 'pubmed_test')
-#         if(numNewArticles > 0):
-#             currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_test')
-#             asOfThisYear = pd.DataFrame(currentAuthorSummaryTable.iloc[10]).T
-#             checkAuthorRecord(finalTable, asOfThisYear)
-#             pushAuthorSummary(currentAuthorSummaryTable, key_dict, 'pubmed_test')
+        if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
+            result = authorSummary(key_dict, 'pubmed')
+            pushAuthorSummary(result, key_dict, 'pubmed_test')
+        if(numNewArticles > 0):
+            currentAuthorSummaryTable = retrieveAuthorSummaryTable(key_dict, 'pubmed_test')
+            asOfThisYear = pd.DataFrame(currentAuthorSummaryTable.iloc[10]).T
+            checkAuthorRecord(finalTable, asOfThisYear)
+            pushAuthorSummary(currentAuthorSummaryTable, key_dict, 'pubmed_test')
 
-#         print("Update complete.")
-#     else:
-#         print("No updates were performed.")
+        print("Update complete.")
+    else:
+        print("No updates were performed.")
 
 # if __name__ == '__main__':
 #     main()
-    #run the following line if any one or more articles need to be moved to another container. 
-#     moveItemToIgnoreContainer(key_dict, ['27028034'], 'pubmed', 'pubmed_ignore')
