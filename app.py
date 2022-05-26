@@ -205,7 +205,7 @@ def update_author_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_r
     )
 
     # Add figure title
-    fig.update_layout(title_text="<b> OHDSI Researchers</b>", title_x=0.5, showlegend=False)
+    fig.update_layout(title_text="<b> New and Cumulative OHDSI Researchers</b>", title_x=0.5, showlegend=False)
     # Set x-axis title
     fig.update_xaxes(title_text="Year")
     # Set y-axes titles

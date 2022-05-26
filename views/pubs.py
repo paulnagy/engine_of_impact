@@ -1,3 +1,4 @@
+from tkinter import E
 import dash
 import dash_bootstrap_components as dbc
 import ast
@@ -68,6 +69,22 @@ def build_pubs_dash():
                 auth_list+="{}, ".format(auth.replace(',',''))
             auth_list=auth_list[:-2]
         df1.loc[i,'Authors']=auth_list
+
+    for i,row in df1.iterrows():
+        meshTerms = row['MeSH Terms'].replace("]", "")
+        meshTerms = meshTerms.replace("[", "")
+        meshList = meshTerms.split(",")
+        # terms=ast.literal_eval(meshTerms)
+        term_list=""
+        for term in meshList:
+            term_list+= term + ", "
+        term_list = term_list.replace("'", "")
+        term_list = term_list.replace("*", "")
+        term_list=term_list[:-2]
+        if(term_list == "nan"):
+            df1.loc[i,'MeSH Terms']= "Not Yet Available"
+        else:
+            df1.loc[i,'MeSH Terms']=term_list
 
     df1['Creation Date']=df1['Creation Date'].str[:-6]
     df2=df1.groupby('Publication Year')['PubMed ID'].count().reset_index()
