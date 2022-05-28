@@ -398,7 +398,7 @@ def getGoogleScholarCitation(row, serp_api_key):
     
     #create 4 new columns
     if(len(appendedResults) == 0):
-        dictArticlesToMatch = {}
+        dictArticlesToMatch = {"citationInfo": {}, 'firstAuthorInfo': {}, 'fullAuthorInfo': {}, 'titleAuthorStr': {}, 'googleScholarLink': {}}
     else:
         dictArticlesToMatch = serpApiExtract(appendedResults)
     strOptions = dictArticlesToMatch['titleAuthorStr'].keys()
