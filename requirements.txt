@@ -5,7 +5,7 @@
 azure-functions
 azure-cosmos
 google-api-python-client
-google-search-results 
+google-search-results  #https://github.com/serpapi/google-search-results-python
 oauth2client
 pandas
 biopython >= 1.22.3

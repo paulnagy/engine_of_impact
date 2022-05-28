@@ -54,12 +54,6 @@ AADConfig.sanity_check_configs(aad_configuration)
 adapter = FlaskContextAdapter(app)
 ms_identity_web = IdentityWebPython(aad_configuration, adapter)
 
-#youtube.main()
-#pubmed.main()
-# app=dash.Dash()
-#app.layout= pubs.build_pubs_dash()
-# app.layout= education.build_education_dash()
-
 
 #Dash Apps
 import dash_bootstrap_components as dbc
@@ -78,6 +72,11 @@ def index():
     return render_template('home.html')
     # return render_template('auth/status.html')
 
+@app.route('/update_all', methods=['GET'])
+def update_all():
+    youtube.main()
+    pubmed.main()
+    return 
 
 @app.route('/publication_dashboard/', methods = ['POST', 'GET'])
 def dashboard():
