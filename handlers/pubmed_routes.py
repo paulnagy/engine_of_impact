@@ -52,8 +52,7 @@ def configure_routes(app,pubmedDashApp):
         df2=((dff.groupby('Publication Year')['PubMed ID']).count()).reset_index()
         df2.columns=['Year','Count']
         df3=((dff.groupby('Publication Year')['Citation Count']).sum()).reset_index()
-        df3['cumulative']= round(df3['Citation Count'].cumsum(), 0)
-        
+        df3['cumulative']= round(df3['Citation Count'].cumsum(), 0) 
         df3.columns=['Year','citations','Count']
         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -115,13 +114,17 @@ def configure_routes(app,pubmedDashApp):
     )
     def update_author_bar(all_rows_data, slctd_row_indices, slct_rows_names, slctd_rows,
                 order_of_rows_indices, order_of_rows_names, actv_cell, slctd_cell):
-
+        #results_container=pubmed_miner.init_cosmos(key_dict,'dashboard')
+        #query="SELECT * FROM c where c.id = 'pubmed_authors'"
+        #items = list(container.query_items(query=query, enable_cross_partition_query=True ))
+        #for item in items:
+        #    currentAuthorSummaryTable=pd.dataframe(item['data'])
         currentAuthorSummaryTable = pubmed_miner.retrieveAuthorSummaryTable(key_dict, 'pubmed_author')
+
         currentAuthorSummaryTable = currentAuthorSummaryTable[['pubYear', 'numberNewFirstAuthors', 'cumulativeFirstAuthors', 'numberNewAuthors', 'cumulativeAuthors']]
         currentAuthorSummaryTable.columns = ['Year', 'New First Authors', 'Total First Authors', 'All New Authors', 'Total Authors']
 
         fig = make_subplots(specs=[[{"secondary_y": True}]])
-
         # Add traces
         fig.add_trace(
             go.Bar(

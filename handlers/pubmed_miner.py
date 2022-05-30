@@ -879,6 +879,13 @@ def retrieveAuthorSummaryTable(key_dict: dict, containerName):
                           uniqueAuthors, numberNewAuthors, cumulativeAuthors]).T
         
         df.columns = colNames
+
+    #Send resulting author table to dashboard container
+    result_container=init_cosmos(key_dict,'dashboard')
+    results={}
+    results['data']=df.to_json()
+    results['id']='pubmed_authors'
+    result_container.upsert_item(body=json.dumps(results))
         
 #         df['datePulled'] = date.datetime.now().strftime("%m-%d-%Y")
     return df
