@@ -3,7 +3,7 @@ import dash
 import dash_bootstrap_components as dbc
 import ast
 from dash import dcc, html, dash_table
-from handlers import key_vault, pubmed
+from handlers import key_vault, pubmed_miner
 import plotly.express as px
 import pandas as pd 
 
@@ -12,9 +12,8 @@ def build_pubs_dash():
     container_name='pubmed'
     container_for_author_data='pubmed_author'
     key_dict = key_vault.get_key_dict()
-    container=pubmed.init_cosmos(key_dict, container_name)
-    container_author_data=pubmed.init_cosmos(key_dict, container_for_author_data)
-
+    container=pubmed_miner.init_cosmos(key_dict, container_name)
+    container_author_data=pubmed_miner.init_cosmos(key_dict, container_for_author_data)
 
     query = "SELECT * FROM c"
     items = list(container.query_items(

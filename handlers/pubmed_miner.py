@@ -21,7 +21,6 @@ from os.path import exists
 from pprint import pprint
 from collections import defaultdict, Counter
 from dateutil.parser import *
-# import verifiedPubMedArticles as vf
 import ast
 
 def init_cosmos(key_dict: dict, container_name:str):
@@ -29,7 +28,6 @@ def init_cosmos(key_dict: dict, container_name:str):
     Parameters
     ---
     * container_name : str - Name of azure container in cosmos db
-
     Returns container for cosmosclient
     """
     endpoint = key_dict['AZURE_ENDPOINT']

@@ -2,7 +2,7 @@ import dash
 import ast
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
-from handlers import key_vault, pubmed
+from handlers import key_vault, pubmed_miner
 import plotly.express as px
 import pandas as pd 
 
@@ -25,7 +25,7 @@ def convert_time(time_str):
 def build_education_dash():
     container_name='youtube'
     key_dict = key_vault.get_key_dict()
-    container=pubmed.init_cosmos(key_dict, container_name)
+    container=pubmed_miner.init_cosmos(key_dict, container_name)
     query = "SELECT * FROM c"
     items = list(container.query_items(
         query=query,
