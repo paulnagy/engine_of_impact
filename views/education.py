@@ -2,7 +2,7 @@ import dash
 import ast
 from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
-from api_miners import key_vault, pubmed
+from handlers import key_vault, pubmed
 import plotly.express as px
 import pandas as pd 
 

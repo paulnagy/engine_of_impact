@@ -3,7 +3,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from oauth2client.tools import argparser
 # import key_vault as kv
-from api_miners import key_vault as kv
+from handlers import key_vault as kv
 
 from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec%3Aentrez-specialized-parsers
 import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
@@ -947,6 +947,7 @@ def main():
         finalTable = finalTable.reset_index()
         if ('index' in finalTable.columns):
             del finalTable['index']
+        if ('level_0' in finalTable.columns):
             del finalTable['level_0']
 
         #update the current records
