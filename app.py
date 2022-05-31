@@ -1,15 +1,7 @@
-#import datetime as date  
-#import pandas as pd 
-#import plotly.express as px
-#import plotly.graph_objects as go
-##from plotly.subplots import make_subplots
 from dash import Dash, dcc, html, Input, Output, State
 from flask import Flask
 from flask_session import Session
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
-#from functools import wraps
-#from distutils.log import error
-#from googleapiclient.discovery import build
 from handlers import key_vault, pubmed_dash, pubmed_miner, pubmed_routes, youtube_miner, youtube_dash, youtube_routes, auth_routes
 from dash.dash_table.Format import Format, Group
 import dash_bootstrap_components as dbc
