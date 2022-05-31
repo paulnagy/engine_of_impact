@@ -3,8 +3,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from oauth2client.tools import argparser
 # import key_vault as kv
-from handlers import key_vault as kv
-
+from . import key_vault as kv
 from Bio import Entrez, Medline #http://biopython.org/DIST/docs/tutorial/Tutorial.html#sec%3Aentrez-specialized-parsers
 import xmltodict #https://marcobonzanini.com/2015/01/12/searching-pubmed-with-python/
 import time
@@ -885,7 +884,7 @@ def retrieveAuthorSummaryTable(key_dict: dict, containerName):
     results={}
     results['data']=df.to_json()
     results['id']='pubmed_authors'
-    result_container.upsert_item(body=json.dumps(results))
+    result_container.upsert_item(body=results)
         
 #         df['datePulled'] = date.datetime.now().strftime("%m-%d-%Y")
     return df

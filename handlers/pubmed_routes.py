@@ -7,7 +7,7 @@ from dash import Dash, dcc, html, Input, Output, State
 from flask import Flask
 from flask_session import Session
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
-from handlers import pubmed_miner, key_vault
+from . import pubmed_miner, key_vault
 from azure.cosmos import CosmosClient, PartitionKey
 
 

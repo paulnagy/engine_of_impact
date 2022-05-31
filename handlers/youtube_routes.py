@@ -8,7 +8,7 @@ from dash import Dash, dcc, html, Input, Output, State
 from flask import Flask
 from flask_session import Session
 from flask import Flask, current_app, flash, jsonify, make_response, redirect, request, render_template, send_file, Blueprint, url_for, redirect
-from handlers import youtube_miner
+from . import youtube_miner
 
 def configure_routes(app,youtubeDashApp):
     @app.route('/education_dashboard/', methods = ['POST', 'GET'])

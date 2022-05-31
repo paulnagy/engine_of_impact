@@ -5,7 +5,7 @@ from apiclient.errors import HttpError
 from oauth2client.tools import argparser
 import pandas as pd
 import datetime
-from handlers import key_vault as kv
+from . import key_vault as kv
 
 """ Steps
 1. Initialize the cosmos client
