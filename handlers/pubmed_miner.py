@@ -471,7 +471,6 @@ def makeCSVJSON(table, key_dict: dict, containerChosen: str, forUpdate: bool):
     Called in main()
     Add new records to the existing records and update container
     """
-    container = init_cosmos(key_dict, 'pubmed')
     container_ignore = init_cosmos(key_dict, 'pubmed_ignore')
     container_chosen = init_cosmos(key_dict, containerChosen)
     if(forUpdate):
@@ -955,7 +954,7 @@ def main():
             del finalTable['level_0']
 
         #update the current records
-        makeCSVJSON(finalTable, key_dict)
+        makeCSVJSON(finalTable, key_dict, 'pubmed', True)
         
         if(getTimeOfLastUpdate(key_dict)[0:2] + getTimeOfLastUpdate(key_dict)[5:10] != dateMY):
             currentSummary = retrieveAsTable(key_dict, True, 'pubmed')
